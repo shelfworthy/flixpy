@@ -20,19 +20,19 @@ for o, a in opts:
 	if o == '-a':
 		usertoken = True
 		
-APP_NAME   = 'Movie browser'
-API_KEY    = 'nbf4kr594esg4af25qexwtnu'
-API_SECRET = 'SSSeTdsPsM'
-CALLBACK   = 'http://www.synedra.org'
+APP_NAME   = ''
+API_KEY    = ''
+API_SECRET = ''
+CALLBACK   = ''
 
 EXAMPLE_USER = {
         'request': {
-                'key': 'hwq8evzp4z2btfx5en9pfkvt',
-                'secret': 'btrdgnyQcVxZ'
+                'key': '',
+                'secret': ''
         },
         'access': {
-                'key': 'T1lSMROEioV5Fio4RCWnRgSKe2pqg.W7pOgp8jBlf_Z5CUp0_9CtnXOpU.iVC4uw8U7qkD4BmEZIZfTyJcJWfe6Q--',
-                'secret': 'RjQcVfVvyPnZ'
+                'key': ',
+                'secret': ''
         }
 }
 		
