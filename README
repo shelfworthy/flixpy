@@ -1,0 +1,15 @@
+Basic readme for the pyflix module.
+
+In order to use the system, you need to get a developer key/secret from the Netflix developer site.  You will need those for all requests to Netflix.
+
+To help you get a better understanding of how this works, here's a step by step tutorial.
+
+1) Get a developer API key and secret
+2) Put those values in the example.py script
+3) Run the example.py script.  In this configuration it will perform all of the actions it can do without an authenticated user.
+4) Run the example.py script with the "-a" flag.  Since you don't already have user keys, it will start the process of retrieving them.
+5) Visit the website listed, and insert the request values into the example.py script under EXAMPLE_USER['request']
+6) Run the example.py script again with the "-a" flag.  This will generate the access values.  Insert those into the script under EXAMPLE_USER['access']
+7) At this point you can do any of the actions with example.py -a
+
+In your own coding you may want to run these steps differently, or more silently.  You can retain the configuration within your application.  The example is somewhat clunky but should help you understand what can be done with the various levels of authentication.
