@@ -1,0 +1,7 @@
+Netflix.py
+setup.py
+Netflix.egg-info/PKG-INFO
+Netflix.egg-info/SOURCES.txt
+Netflix.egg-info/dependency_links.txt
+Netflix.egg-info/requires.txt
+Netflix.egg-info/top_level.txt
