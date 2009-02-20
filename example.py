@@ -36,7 +36,6 @@ EXAMPLE_USER = {
         }
 }
 
-
 		
 netflix = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK)
 if usertoken:
@@ -78,7 +77,7 @@ for arg in args:
 	print info['title']['short']
 	
   print "*** Now we'll go ahead and try to retrieve the single movie via ID string ***"
-  movie = netflix.catalog.getMovie(testSubject['id'])
+  movie = netflix.catalog.getTitle(testSubject['id'])
   if movie['catalog_title']['title']['regular'] == testSubject['title']['regular']:
 	print "It's a match, woo!"
 
@@ -90,6 +89,20 @@ for arg in args:
   print "*** And the synopsis ***"
   synopsis = disc.getInfo('synopsis')
   print "Synopsis: %s" % simplejson.dumps(synopsis, indent=4)
+
+  print "*** And the cast ***"
+  cast = disc.getInfo('cast')
+  print "Cast: %s" % simplejson.dumps(cast, indent=4)
+
+  print "*** Picking a random cast member for a person search ***"
+  testPerson = cast['people']['person'][0]
+  print "*** Searching for %s ***" % testPerson['name']
+  person = netflix.catalog.searchPeople(testPerson['name'])
+  print simplejson.dumps(person,indent=4)
+
+  print "*** Now let's retrieve that person by ID ***"
+  newPerson = netflix.catalog.getPerson(testPerson['id'])
+  print simplejson.dumps(newPerson,indent=4)
 
   if queuedisc:
 		if not usertoken:
@@ -105,3 +118,4 @@ else:
 	print "*** No authenticated user, so we'll just look at the average rating for the movies.***"
 	for disc in discs:
 		print "%s : %s" % (disc['title']['regular'],disc['average_rating'])
+		

@@ -28,33 +28,36 @@ class NetflixUser():
 		self.client = client
 
 	def getRequestToken(self):
-		oauth_request = oauth.OAuthRequest.from_consumer_and_token(self.consumer, http_url=self.request_token_url)
-		oauth_request.sign_request(self.signature_method_hmac_sha1, self.consumer, None)
+		client = self.client
+		oauth_request = oauth.OAuthRequest.from_consumer_and_token(client.consumer, http_url=self.request_token_url)
+		oauth_request.sign_request(client.signature_method_hmac_sha1, client.consumer, None)
 		client.connection.request(oauth_request.http_method, self.request_token_url, headers=oauth_request.to_header())
 		response = client.connection.getresponse()
 		request_token = oauth.OAuthToken.from_string(response.read())
 
-		params = {'application_name': self.CONSUMER_NAME, 'oauth_consumer_key': self.CONSUMER_KEY}
+		params = {'application_name': client.CONSUMER_NAME, 'oauth_consumer_key': client.CONSUMER_KEY}
 
-		oauth_request = oauth.OAuthRequest.from_token_and_callback(token=request_token, callback=self.CONSUMER_CALLBACK,
+		oauth_request = oauth.OAuthRequest.from_token_and_callback(token=request_token, callback=client.CONSUMER_CALLBACK,
 		      http_url=self.authorization_url, parameters=params)
 
 		return ( request_token, oauth_request.to_url() )
 
 	
 	def getAccessToken(self, request_token):
+		client = self.client
+		
 		if not isinstance(request_token, oauth.OAuthToken):
 		        request_token = oauth.OAuthToken( request_token['key'], request_token['secret'] )
-		oauth_request = oauth.OAuthRequest.from_consumer_and_token(	self.consumer,
+		oauth_request = oauth.OAuthRequest.from_consumer_and_token(	client.consumer,
 									token=request_token,
 									http_url=self.access_token_url)
-		oauth_request.sign_request(	self.signature_method_hmac_sha1,
-		self.consumer,
-		request_token)
-		self.connection.request(	oauth_request.http_method,
-		self.access_token_url,
-		headers=oauth_request.to_header())
-		response = self.connection.getresponse()
+		oauth_request.sign_request(	client.signature_method_hmac_sha1,
+									client.consumer,
+									request_token)
+		client.connection.request(	oauth_request.http_method,
+									self.access_token_url,
+									headers=oauth_request.to_header())
+		response = client.connection.getresponse()
 		access_token = oauth.OAuthToken.from_string(response.read())
 		return access_token
  	
@@ -127,12 +130,10 @@ class NetflixCatalog():
 		   parameters['startIndex'] = startIndex
 	   if maxResults:
 		   parameters['maxResults'] = maxResults
-	   	   
-
 	   info = simplejson.loads( self.client._get_resource( request_url, parameters=parameters))
 
 	   return info['catalog_titles']['catalog_title']
-		
+
 	def searchStringTitles(self, term,startIndex=None,maxResults=None):
 	   request_url = '/catalog/titles/autocomplete'
 	   parameters = {'term': term}
@@ -145,11 +146,29 @@ class NetflixCatalog():
 	   print simplejson.dumps(info)
 	   return info['autocomplete']['autocomplete_item']
 	
-	def getMovie(self, url):
+	def getTitle(self, url):
 	   request_url = url
 	   info = simplejson.loads( self.client._get_resource( request_url ))
 	   return info
-	
+
+	def searchPeople(self, term,startIndex=None,maxResults=None):
+	   request_url = '/catalog/people'
+	   parameters = {'term': term}
+	   if startIndex:
+		   parameters['startIndex'] = startIndex
+	   if maxResults:
+		   parameters['maxResults'] = maxResults
+
+
+	   info = simplejson.loads( self.client._get_resource( request_url, parameters=parameters))
+
+	   return info['people']['person']
+
+	def getPerson(self,url):
+		request_url = url
+		info = simplejson.loads( self.client._get_resource( request_url ))
+		return info
+		
 		  
 
 class NetflixDisc:
@@ -181,7 +200,6 @@ class NetflixClient:
 		self.verbose = verbose
 		self.user = None
 		self.catalog = NetflixCatalog(self)
-
 		
 		self.CONSUMER_NAME=name
 		self.CONSUMER_KEY=key
