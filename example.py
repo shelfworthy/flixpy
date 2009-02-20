@@ -36,7 +36,6 @@ EXAMPLE_USER = {
         }
 }
 
-
 netflix = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK, verbose)
 if usertoken:
 	netflix.user = NetflixUser(EXAMPLE_USER,netflix)
@@ -168,11 +167,25 @@ if usertoken:
 	recommendations = netflix.user.getInfo('recommendations')
 	print simplejson.dumps(recommendations,indent=4)
 	
+	
+	######################################
+	# We need to fix up this queue stuff 
+	# so that a queue is an object with
+	# adding, deleting, shuffling around
+	# methods
+	######################################
 	if queuedisc:
 		if not usertoken:
 			print "Unable to add to queue without authorization.  Use -a to authorize."
 		else:
 			print netflix.user.queueDiscs( urls=["http://api.netflix.com/catalog/titles/movies/60002013"])
 
+	# Simple rental history
+	history = netflix.user.getRentalHistory()
+	print simplejson.dumps(history,indent=4)
+	
+	# A little more complicated, let's use mintime to get recent shipments
+	history = netflix.user.getRentalHistory('shipped',updatedMin=1219775019,maxResults=4)
+	print simplejson.dumps(history,indent=4)
   
 	

@@ -21,61 +21,61 @@ class NetflixError(Exception): pass
 
 class NetflixUser():
 	def __init__(self, user, client):
-		self.request_token_url = REQUEST_TOKEN_URL
-		self.access_token_url  = ACCESS_TOKEN_URL
-		self.authorization_url = AUTHORIZATION_URL
-		self.access_token = oauth.OAuthToken( user['access']['key'], user['access']['secret'] )
+		self.requestTokenUrl = REQUEST_TOKEN_URL
+		self.accessTokenUrl  = ACCESS_TOKEN_URL
+		self.authorizationUrl = AUTHORIZATION_URL
+		self.accessToken = oauth.OAuthToken( user['access']['key'], user['access']['secret'] )
 		self.client = client
 		self.data = None
 
 	def getRequestToken(self):
 		client = self.client
-		oauth_request = oauth.OAuthRequest.from_consumer_and_token(client.consumer, http_url=self.request_token_url)
-		oauth_request.sign_request(client.signature_method_hmac_sha1, client.consumer, None)
-		client.connection.request(oauth_request.http_method, self.request_token_url, headers=oauth_request.to_header())
+		oauthRequest = oauth.OAuthRequest.from_consumer_and_token(client.consumer, http_url=self.requestTokenUrl)
+		oauthRequest.sign_request(client.signature_method_hmac_sha1, client.consumer, None)
+		client.connection.request(oauthRequest.http_method, self.requestTokenUrl, headers=oauthRequest.to_header())
 		response = client.connection.getresponse()
-		request_token = oauth.OAuthToken.from_string(response.read())
+		requestToken = oauth.OAuthToken.from_string(response.read())
 
 		params = {'application_name': client.CONSUMER_NAME, 'oauth_consumer_key': client.CONSUMER_KEY}
 
-		oauth_request = oauth.OAuthRequest.from_token_and_callback(token=request_token, callback=client.CONSUMER_CALLBACK,
-		      http_url=self.authorization_url, parameters=params)
+		oauthRequest = oauth.OAuthRequest.from_token_and_callback(token=requestToken, callback=client.CONSUMER_CALLBACK,
+		      http_url=self.authorizationUrl, parameters=params)
 
-		return ( request_token, oauth_request.to_url() )
+		return ( requestToken, oauthRequest.to_url() )
 
 	
-	def getAccessToken(self, request_token):
+	def getAccessToken(self, requestToken):
 		client = self.client
 		
-		if not isinstance(request_token, oauth.OAuthToken):
-		        request_token = oauth.OAuthToken( request_token['key'], request_token['secret'] )
-		oauth_request = oauth.OAuthRequest.from_consumer_and_token(	client.consumer,
-									token=request_token,
-									http_url=self.access_token_url)
-		oauth_request.sign_request(	client.signature_method_hmac_sha1,
+		if not isinstance(requestToken, oauth.OAuthToken):
+		        requestToken = oauth.OAuthToken( requestToken['key'], requestToken['secret'] )
+		oauthRequest = oauth.OAuthRequest.from_consumer_and_token(	client.consumer,
+									token=requestToken,
+									http_url=self.accessTokenUrl)
+		oauthRequest.sign_request(	client.signature_method_hmac_sha1,
 									client.consumer,
-									request_token)
-		client.connection.request(	oauth_request.http_method,
-									self.access_token_url,
-									headers=oauth_request.to_header())
+									requestToken)
+		client.connection.request(	oauthRequest.http_method,
+									self.accessTokenUrl,
+									headers=oauthRequest.to_header())
 		response = client.connection.getresponse()
-		access_token = oauth.OAuthToken.from_string(response.read())
-		return access_token
+		accessToken = oauth.OAuthToken.from_string(response.read())
+		return accessToken
  	
 	def getData(self):
-		access_token=self.access_token
+		accessToken=self.accessToken
 
-		if not isinstance(access_token, oauth.OAuthToken):
-			access_token = oauth.OAuthToken( access_token['key'], access_token['secret'] )
+		if not isinstance(accessToken, oauth.OAuthToken):
+			accessToken = oauth.OAuthToken( accessToken['key'], accessToken['secret'] )
 		
-		request_url = '/users/%s' % (access_token.key)
+		requestUrl = '/users/%s' % (accessToken.key)
 		
-		info = simplejson.loads( self.client._get_resource( request_url, token=access_token ) )
+		info = simplejson.loads( self.client._getResource( requestUrl, token=accessToken ) )
 		self.data = info['user']
 		return self.data
 		
 	def getInfo(self,field):
-		access_token=self.access_token
+		accessToken=self.accessToken
 		
 		if not self.data:
 			self.getData()
@@ -91,25 +91,25 @@ class NetflixUser():
 			errorString = "Invalid or missing field.  Acceptable fields for this object are:\n" + "\n".join(fields)
 			raise Exception(errorString)		
 		try:
-			info = simplejson.loads(self.client._get_resource( url,token=access_token ))
+			info = simplejson.loads(self.client._getResource( url,token=accessToken ))
 		except :
 			return []
 		else:
 			return info
 		
- 	def getRatings(self, disc_info=[], urls=[]):
-		access_token=self.access_token
+ 	def getRatings(self, discInfo=[], urls=[]):
+		accessToken=self.accessToken
 		
-		if not isinstance(access_token, oauth.OAuthToken):
-			access_token = oauth.OAuthToken( access_token['key'], access_token['secret'] )
+		if not isinstance(accessToken, oauth.OAuthToken):
+			accessToken = oauth.OAuthToken( accessToken['key'], accessToken['secret'] )
 		
-		request_url = '/users/%s/ratings/title' % (access_token.key)
+		requestUrl = '/users/%s/ratings/title' % (accessToken.key)
 		if not urls:
-		           for disc in disc_info:
+		           for disc in discInfo:
 						urls.append(disc['id'])
 		parameters = { 'title_refs': ','.join(urls) }
 		
-		info = simplejson.loads( self.client._get_resource( request_url, parameters=parameters, token=access_token ) )
+		info = simplejson.loads( self.client._getResource( requestUrl, parameters=parameters, token=accessToken ) )
 		
 		ret = {}
 		for title in info['ratings']['ratings_item']:
@@ -126,81 +126,104 @@ class NetflixUser():
 		
 		return ret
 
-	def queueDiscs(self, disc_info=[], urls=[]):
-		access_token=self.access_token
+	def queueDiscs(self, discInfo=[], urls=[]):
+		accessToken=self.accessToken
 		
-		if not isinstance(access_token, oauth.OAuthToken):
-			access_token = oauth.OAuthToken( access_token['key'], access_token['secret'] )
+		if not isinstance(accessToken, oauth.OAuthToken):
+			accessToken = oauth.OAuthToken( accessToken['key'], accessToken['secret'] )
 		
-		request_url = '/users/%s/queues/disc' % (access_token.key)
+		requestUrl = '/users/%s/queues/disc' % (accessToken.key)
 		if not urls:
-			for disc in disc_info:
+			for disc in discInfo:
 				urls.append( disc['id'] )
 		parameters = { 'title_ref': ','.join(urls) }
 		
-		response = simplejson.loads(self.client._get_resource( request_url, token=access_token ))
+		response = simplejson.loads(self.client._getResource( requestUrl, token=accessToken ))
 		tag = response["queue"]["etag"]
-		response = self.client._post_resource( request_url, token=access_token, parameters=parameters )
+		response = self.client._postResource( requestUrl, token=accessToken, parameters=parameters )
 		print response
 		return response
+		
+	def getRentalHistory(self,type=None,startIndex=None,maxResults=None,updatedMin=None):
+		accessToken=self.accessToken
+		parameters = {}
+		if startIndex:
+			parameters['start_index'] = startIndex
+		if maxResults:
+			parameters['max_results'] = maxResults
+		if updatedMin:
+			parameters['updated_min'] = updatedMin
 
+		if not isinstance(accessToken, oauth.OAuthToken):
+			accessToken = oauth.OAuthToken( accessToken['key'], accessToken['secret'] )
+
+		if not type:
+			requestUrl = '/users/%s/rental_history' % (accessToken.key)
+		else:
+			requestUrl = '/users/%s/rental_history/%s' % (accessToken.key,type)
+		
+		info = simplejson.loads( self.client._getResource( requestUrl, parameters=parameters, token=accessToken ) )
+
+		return info
+		
 class NetflixCatalog():
 	def __init__(self,client):
 		self.client = client
 	
 	def searchTitles(self, term,startIndex=None,maxResults=None):
-	   request_url = '/catalog/titles'
+	   requestUrl = '/catalog/titles'
 	   parameters = {'term': term}
 	   if startIndex:
-		   parameters['startIndex'] = startIndex
+		   parameters['start_index'] = startIndex
 	   if maxResults:
-		   parameters['maxResults'] = maxResults
-	   info = simplejson.loads( self.client._get_resource( request_url, parameters=parameters))
+		   parameters['max_results'] = maxResults
+	   info = simplejson.loads( self.client._getResource( requestUrl, parameters=parameters))
 
 	   return info['catalog_titles']['catalog_title']
 
 	def searchStringTitles(self, term,startIndex=None,maxResults=None):
-	   request_url = '/catalog/titles/autocomplete'
+	   requestUrl = '/catalog/titles/autocomplete'
 	   parameters = {'term': term}
 	   if startIndex:
-		   parameters['startIndex'] = startIndex
+		   parameters['start_index'] = startIndex
 	   if maxResults:
-		   parameters['maxResults'] = maxResults
+		   parameters['max_results'] = maxResults
 
-	   info = simplejson.loads( self.client._get_resource( request_url, parameters=parameters))
+	   info = simplejson.loads( self.client._getResource( requestUrl, parameters=parameters))
 	   print simplejson.dumps(info)
 	   return info['autocomplete']['autocomplete_item']
 	
 	def getTitle(self, url):
-	   request_url = url
-	   info = simplejson.loads( self.client._get_resource( request_url ))
+	   requestUrl = url
+	   info = simplejson.loads( self.client._getResource( requestUrl ))
 	   return info
 
 	def searchPeople(self, term,startIndex=None,maxResults=None):
-	   request_url = '/catalog/people'
+	   requestUrl = '/catalog/people'
 	   parameters = {'term': term}
 	   if startIndex:
-		   parameters['startIndex'] = startIndex
+		   parameters['start_index'] = startIndex
 	   if maxResults:
-		   parameters['maxResults'] = maxResults
+		   parameters['max_results'] = maxResults
 
 	   try:
-	   	   info = simplejson.loads( self.client._get_resource( request_url, parameters=parameters))
+	   	   info = simplejson.loads( self.client._getResource( requestUrl, parameters=parameters))
 	   except:
 		   return []
 
 	   return info['people']['person']
 
 	def getPerson(self,url):
-		request_url = url
-		info = simplejson.loads( self.client._get_resource( request_url ))
-		return info
-		
-		  
+		requestUrl = url
+		try:
+			info = simplejson.loads( self.client._getResource( requestUrl ))
+		except:
+			return {}
+		return info		  
 
 class NetflixDisc:
-	def __init__(self,disc_info,client):
-		self.info = disc_info
+	def __init__(self,discInfo,client):
+		self.info = discInfo
 		self.client = client
 	
 	def getInfo(self,field):
@@ -214,7 +237,7 @@ class NetflixDisc:
 			errorString = "Invalid or missing field.  Acceptable fields for this object are:\n" + "\n".join(fields)
 			raise Exception(errorString)		
 		try:
-			info = simplejson.loads(self.client._get_resource( url ))
+			info = simplejson.loads(self.client._getResource( url ))
 		except :
 			return []
 		else:
@@ -235,33 +258,33 @@ class NetflixClient:
 		self.consumer = oauth.OAuthConsumer(self.CONSUMER_KEY, self.CONSUMER_SECRET)
 		self.signature_method_hmac_sha1 = oauth.OAuthSignatureMethod_HMAC_SHA1()
 	
-	def _get_resource(self, url, token=None, parameters={}):
+	def _getResource(self, url, token=None, parameters={}):
 		if not re.match('http',url):
 			url = "http://%s%s" % (HOST, url)
 		parameters['output'] = 'json'
-		oauth_request = oauth.OAuthRequest.from_consumer_and_token(self.consumer,
+		oauthRequest = oauth.OAuthRequest.from_consumer_and_token(self.consumer,
 								http_url=url,
 								parameters=parameters,
 								token=token)
-		oauth_request.sign_request(	self.signature_method_hmac_sha1,
+		oauthRequest.sign_request(	self.signature_method_hmac_sha1,
 								self.consumer,
 								token)
 		if (self.verbose):
-		        print oauth_request.to_url()
-		self.connection.request('GET', oauth_request.to_url())
+		        print oauthRequest.to_url()
+		self.connection.request('GET', oauthRequest.to_url())
 		response = self.connection.getresponse()
 		return response.read()
 	
-	def _post_resource(self, url, token=None, parameters=None):
+	def _postResource(self, url, token=None, parameters=None):
 		url = "http://%s%s" % (HOST, url)
-		oauth_request = oauth.OAuthRequest.from_consumer_and_token(	self.consumer,
+		oauthRequest = oauth.OAuthRequest.from_consumer_and_token(	self.consumer,
 								http_url=url,
 								parameters=parameters,
 								token=token,
 								http_method='POST')
-		oauth_request.sign_request(self.signature_method_hmac_sha1, self.consumer, token)
+		oauthRequest.sign_request(self.signature_method_hmac_sha1, self.consumer, token)
 		
 		headers = {'Content-Type' :'application/x-www-form-urlencoded'}
-		self.connection.request('POST', url, body=oauth_request.to_postdata(), headers=headers)
+		self.connection.request('POST', url, body=oauthRequest.to_postdata(), headers=headers)
 		response = self.connection.getresponse()
 		return response.read()

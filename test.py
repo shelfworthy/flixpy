@@ -32,7 +32,6 @@ EMPTY_USER = {
         }
 }
 
-
 class TestQuery():
 	def test_base(self):
 		netflixClient = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK)
@@ -57,7 +56,7 @@ class TestQuery():
 		assert isinstance(movie['catalog_title']['title']['regular'],unicode)
 		
 		people = netflixClient.catalog.searchPeople('Flip Wilson',maxResults=1)
-		assert isinstance(people,list)
+		assert isinstance(people,dict)
 		
 	# DISC TESTS
 	def test_disc_functions(self):
@@ -77,6 +76,8 @@ class TestQuery():
 		assert isinstance(user['first_name'],unicode)
 		data = netflixClient.catalog.searchTitles(MOVIE_TITLE)
 		ratings = netflixUser.getRatings(data)
+		history = netflixUser.getRentalHistory('shipped',updatedMin=1219775019,maxResults=4)
+		assert int(history['rental_history']['number_of_results']) <= 5
 
 if __name__ == '__main__':
     unittest.main() 
