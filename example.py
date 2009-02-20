@@ -31,7 +31,7 @@ EXAMPLE_USER = {
                 'secret': ''
         },
         'access': {
-                'key': ',
+                'key': '',
                 'secret': ''
         }
 }
