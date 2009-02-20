@@ -36,8 +36,7 @@ EXAMPLE_USER = {
         }
 }
 
-		
-netflix = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK)
+netflix = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK, verbose)
 if usertoken:
 	netflix.user = NetflixUser(EXAMPLE_USER,netflix)
 	
@@ -58,31 +57,47 @@ if usertoken:
 
 discs=[]
 for arg in args:
+  ######################################
+  # Search for titles matching a string.
+  # To view all of the returned object, 
+  # you can add a simplejson.dumps(info)
+  ######################################  
   print "*** RETRIEVING MOVIES MATCHING %s ***" % arg
-  data = netflix.catalog.searchTitles(arg)
+  data = netflix.catalog.searchTitles(arg,1,10)
   for info in data:
 	print info['title']['regular']
 	discs.append(info)
 
-  testSubject = data[10]
-  print simplejson.dumps(testSubject, indent=4)
-  
-  print "*** For demonstration purposes, we will arbitrarily pick the first result for the remaining tests ***"
-  print "*** Retrieving additional information for %s ***" % (testSubject['title']['regular'])
-
-  print "*** First thing, we'll search for 'Foo' as a string and see if that works ***"
-  autocomplete = netflix.catalog.searchStringTitles('Foo')
+  ######################################
+  # Use autocomplete to retrieve titles
+  # starting with a specified string.
+  # To view all of the returned object, 
+  # you can add a simplejson.dumps(info)
+  ######################################  
+  print "*** First thing, we'll search for 'Coc' as a string and see if that works ***"
+  autocomplete = netflix.catalog.searchStringTitles('Coc')
   print simplejson.dumps(autocomplete)
   for info in autocomplete:
 	print info['title']['short']
 	
-  print "*** Now we'll go ahead and try to retrieve the single movie via ID string ***"
-  movie = netflix.catalog.getTitle(testSubject['id'])
-  if movie['catalog_title']['title']['regular'] == testSubject['title']['regular']:
+  ######################################
+  # Grab a specific title from the ID. 
+  # The ID is available as part of the
+  # results from most queries (including
+  # the ones above.
+  ######################################  
+  print "*** Now we'll go ahead and try to retrieve a single movie via ID string ***"
+  movie = netflix.catalog.getTitle("http://api.netflix.com/catalog/titles/movies/60002013")
+  if movie['catalog_title']['title']['regular'] == "Flip Wilson":
 	print "It's a match, woo!"
 
+  ######################################
+  # You can retrieve information about 
+  # a specific title based on the 'links'
+  # which include formats, synopsis, etc.
+  ######################################  
   print "*** Let's grab the format for this movie ***"
-  disc = NetflixDisc(testSubject,netflix)
+  disc = NetflixDisc(movie['catalog_title'],netflix)
   formats = disc.getInfo('formats')
   print "Formats: %s" % simplejson.dumps(formats,indent=4)
 
@@ -94,14 +109,17 @@ for arg in args:
   cast = disc.getInfo('cast')
   print "Cast: %s" % simplejson.dumps(cast, indent=4)
 
-  print "*** Picking a random cast member for a person search ***"
-  testPerson = cast['people']['person'][0]
-  print "*** Searching for %s ***" % testPerson['name']
-  person = netflix.catalog.searchPeople(testPerson['name'])
+  ######################################
+  # You can search for people or retrieve
+  # a specific person once you know their
+  # netflix ID
+  ######################################  
+  print "*** Searching for %s ***" % "Julia"
+  person = netflix.catalog.searchPeople("Julia")
   print simplejson.dumps(person,indent=4)
 
-  print "*** Now let's retrieve that person by ID ***"
-  newPerson = netflix.catalog.getPerson(testPerson['id'])
+  print "*** Now let's retrieve a person by ID ***"
+  newPerson = netflix.catalog.getPerson("http://api.netflix.com/catalog/people/78726")
   print simplejson.dumps(newPerson,indent=4)
 
   if queuedisc:
@@ -111,6 +129,13 @@ for arg in args:
 			print netflix.user.queueDiscs( urls=[data['id']])
 
 if usertoken and discs:
+	######################################
+    # Ratings are available from each disc,
+    # or if you've got a specific user you
+    # can discover their rating, expected
+    # rating
+    ######################################  
+  
 	print "*** Let's grab some ratings for all the titles that matched initially ***"
 	ratings =  netflix.user.getRatings( discs )
 	print "ratings = %s" % (simplejson.dumps(ratings,indent=4))
@@ -118,4 +143,12 @@ else:
 	print "*** No authenticated user, so we'll just look at the average rating for the movies.***"
 	for disc in discs:
 		print "%s : %s" % (disc['title']['regular'],disc['average_rating'])
-		
+
+######################################
+# User functions.  There are a lot.
+######################################  	
+if usertoken:
+	print "*** Who is this person? ***"
+	user = netflix.user.getInfo()
+	print "%s %s" % (user['first_name'], user['last_name'])
+	

@@ -56,7 +56,7 @@ class TestQuery():
 		movie = netflixClient.catalog.getTitle(data[0]['id'])
 		assert isinstance(movie['catalog_title']['title']['regular'],unicode)
 		
-		people = netflixClient.catalog.searchPeople('Flip Wilson')
+		people = netflixClient.catalog.searchPeople('Flip Wilson',maxResults=1)
 		assert isinstance(people,list)
 		
 	# DISC TESTS

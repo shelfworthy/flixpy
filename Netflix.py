@@ -61,11 +61,19 @@ class NetflixUser():
 		access_token = oauth.OAuthToken.from_string(response.read())
 		return access_token
  	
- 	## gets ratings for a list of titles
-	## must provide the user's access token and either:
-	##   disc_info - list of dicts from get_disc_info
-	##   urls      - list of netflix id urls
-	def getRatings(self, disc_info=[], urls=[]):
+	def getInfo(self, disc_info=[], urls=[]):
+		access_token=self.access_token
+
+		if not isinstance(access_token, oauth.OAuthToken):
+			access_token = oauth.OAuthToken( access_token['key'], access_token['secret'] )
+		
+		request_url = '/users/%s' % (access_token.key)
+		
+		info = simplejson.loads( self.client._get_resource( request_url, token=access_token ) )
+		
+		return info['user']
+		
+ 	def getRatings(self, disc_info=[], urls=[]):
 		access_token=self.access_token
 		
 		if not isinstance(access_token, oauth.OAuthToken):
@@ -217,8 +225,8 @@ class NetflixClient:
 								parameters=parameters,
 								token=token)
 		oauth_request.sign_request(	self.signature_method_hmac_sha1,
-		self.consumer,
-		token)
+								self.consumer,
+								token)
 		if (self.verbose):
 		        print oauth_request.to_url()
 		self.connection.request('GET', oauth_request.to_url())
