@@ -26,6 +26,7 @@ class NetflixUser():
 		self.authorization_url = AUTHORIZATION_URL
 		self.access_token = oauth.OAuthToken( user['access']['key'], user['access']['secret'] )
 		self.client = client
+		self.data = None
 
 	def getRequestToken(self):
 		client = self.client
@@ -61,7 +62,7 @@ class NetflixUser():
 		access_token = oauth.OAuthToken.from_string(response.read())
 		return access_token
  	
-	def getInfo(self, disc_info=[], urls=[]):
+	def getData(self):
 		access_token=self.access_token
 
 		if not isinstance(access_token, oauth.OAuthToken):
@@ -70,8 +71,31 @@ class NetflixUser():
 		request_url = '/users/%s' % (access_token.key)
 		
 		info = simplejson.loads( self.client._get_resource( request_url, token=access_token ) )
+		self.data = info['user']
+		return self.data
 		
-		return info
+	def getInfo(self,field):
+		access_token=self.access_token
+		
+		if not self.data:
+			self.getData()
+			
+		fields = []
+		url = ''
+		for link in self.data['link']:
+				fields.append(link['title'])
+				if link['title'] == field:
+					url = link['href']
+					
+		if not url:
+			errorString = "Invalid or missing field.  Acceptable fields for this object are:\n" + "\n".join(fields)
+			raise Exception(errorString)		
+		try:
+			info = simplejson.loads(self.client._get_resource( url,token=access_token ))
+		except :
+			return []
+		else:
+			return info
 		
  	def getRatings(self, disc_info=[], urls=[]):
 		access_token=self.access_token
@@ -102,30 +126,23 @@ class NetflixUser():
 		
 		return ret
 
-		
- 	
- 	## add discs to the users disc queue
-	## must provide the user's access token and either:
-	##   disc_info - list of dicts from get_disc_info
-	##   urls      - list of netflix id urls
 	def queueDiscs(self, disc_info=[], urls=[]):
-			access_token=self.access_token
-			print access_token
-			
-			if not isinstance(access_token, oauth.OAuthToken):
-				access_token = oauth.OAuthToken( access_token['key'], access_token['secret'] )
-			
-			request_url = '/users/%s/queues/disc' % (access_token.key)
-			if not urls:
-				for disc in disc_info:
-					urls.append( disc['id'] )
-			parameters = { 'title_ref': ','.join(urls) }
-			
-			response = self.client._get_resource( request_url, token=access_token )
-			tag = re.search('<etag>(\d+)</etag>', response)
-			parameters['etag'] = tag.group(1)
-			response = self.client._post_resource( request_url, token=access_token, parameters=parameters )
-			return response
+		access_token=self.access_token
+		
+		if not isinstance(access_token, oauth.OAuthToken):
+			access_token = oauth.OAuthToken( access_token['key'], access_token['secret'] )
+		
+		request_url = '/users/%s/queues/disc' % (access_token.key)
+		if not urls:
+			for disc in disc_info:
+				urls.append( disc['id'] )
+		parameters = { 'title_ref': ','.join(urls) }
+		
+		response = simplejson.loads(self.client._get_resource( request_url, token=access_token ))
+		tag = response["queue"]["etag"]
+		response = self.client._post_resource( request_url, token=access_token, parameters=parameters )
+		print response
+		return response
 
 class NetflixCatalog():
 	def __init__(self,client):
@@ -167,8 +184,10 @@ class NetflixCatalog():
 	   if maxResults:
 		   parameters['maxResults'] = maxResults
 
-
-	   info = simplejson.loads( self.client._get_resource( request_url, parameters=parameters))
+	   try:
+	   	   info = simplejson.loads( self.client._get_resource( request_url, parameters=parameters))
+	   except:
+		   return []
 
 	   return info['people']['person']
 

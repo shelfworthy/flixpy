@@ -73,6 +73,8 @@ class TestQuery():
 	def test_user_functions(self):
 		netflixClient = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK)
 		netflixUser = NetflixUser(EXAMPLE_USER,netflixClient)
+		user = netflixUser.getData()
+		assert isinstance(user['first_name'],unicode)
 		data = netflixClient.catalog.searchTitles(MOVIE_TITLE)
 		ratings = netflixUser.getRatings(data)
 

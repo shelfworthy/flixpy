@@ -36,6 +36,7 @@ EXAMPLE_USER = {
         }
 }
 
+
 netflix = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK, verbose)
 if usertoken:
 	netflix.user = NetflixUser(EXAMPLE_USER,netflix)
@@ -116,17 +117,13 @@ for arg in args:
   ######################################  
   print "*** Searching for %s ***" % "Julia"
   person = netflix.catalog.searchPeople("Julia")
-  print simplejson.dumps(person,indent=4)
+  if isinstance(person,dict):
+  	print simplejson.dumps(person,indent=4)
 
   print "*** Now let's retrieve a person by ID ***"
   newPerson = netflix.catalog.getPerson("http://api.netflix.com/catalog/people/78726")
-  print simplejson.dumps(newPerson,indent=4)
-
-  if queuedisc:
-		if not usertoken:
-			print "Unable to add to queue without authorization.  Use -a to authorize."
-		else:
-			print netflix.user.queueDiscs( urls=[data['id']])
+  if isinstance(newPerson,dict):
+  	print simplejson.dumps(newPerson,indent=4)
 
 if usertoken and discs:
 	######################################
@@ -149,6 +146,33 @@ else:
 ######################################  	
 if usertoken:
 	print "*** Who is this person? ***"
-	user = netflix.user.getInfo()
+	user = netflix.user.getData()
 	print "%s %s" % (user['first_name'], user['last_name'])
+	print simplejson.dumps(user,indent=4)
+	
+	######################################
+	# User subinfo is accessed similarly
+	# to disc subinfo.  Find the field
+	# describing the thing you want, then
+	# retrieve that url and get that info
+	######################################
+	print "*** What are their feeds? ***"
+	feeds = netflix.user.getInfo('feeds')
+	print simplejson.dumps(feeds,indent=4)
+	
+	print "*** Do they have anything at home? ***"
+	feeds = netflix.user.getInfo('at home')
+	print simplejson.dumps(feeds,indent=4)
+	
+	print "*** Show me their recommendations ***"
+	recommendations = netflix.user.getInfo('recommendations')
+	print simplejson.dumps(recommendations,indent=4)
+	
+	if queuedisc:
+		if not usertoken:
+			print "Unable to add to queue without authorization.  Use -a to authorize."
+		else:
+			print netflix.user.queueDiscs( urls=["http://api.netflix.com/catalog/titles/movies/60002013"])
+
+  
 	
