@@ -120,7 +120,7 @@ class NetflixCatalog():
 	def __init__(self,client):
 		self.client = client
 	
-	def searchMovieTitles(self, term,startIndex=None,maxResults=None):
+	def searchTitles(self, term,startIndex=None,maxResults=None):
 	   request_url = '/catalog/titles'
 	   parameters = {'term': term}
 	   if startIndex:
@@ -131,9 +131,9 @@ class NetflixCatalog():
 
 	   info = simplejson.loads( self.client._get_resource( request_url, parameters=parameters))
 
-	   return info
+	   return info['catalog_titles']['catalog_title']
 		
-	def searchStringMovieTitles(self, term,startIndex=None,maxResults=None):
+	def searchStringTitles(self, term,startIndex=None,maxResults=None):
 	   request_url = '/catalog/titles/autocomplete'
 	   parameters = {'term': term}
 	   if startIndex:
@@ -142,8 +142,8 @@ class NetflixCatalog():
 		   parameters['maxResults'] = maxResults
 
 	   info = simplejson.loads( self.client._get_resource( request_url, parameters=parameters))
-	
-	   return info
+	   print simplejson.dumps(info)
+	   return info['autocomplete']['autocomplete_item']
 	
 	def getMovie(self, url):
 	   request_url = url
@@ -157,15 +157,16 @@ class NetflixDisc:
 		self.info = disc_info
 		self.client = client
 	
-	## gets the available formats for a given title
-	## provide either:
-	##   disc_info - the dict from get_disc_info
-	##   url       - the netflix id url
-	def getAvailableFormats(self, url=None):		
-		if not url:
-			for link in self.info['link']:
-				if link['title'] == 'formats':
+	def getInfo(self,field):
+		fields = []
+		url = ''
+		for link in self.info['link']:
+				fields.append(link['title'])
+				if link['title'] == field:
 					url = link['href']
+		if not url:
+			errorString = "Invalid or missing field.  Acceptable fields for this object are:\n" + "\n".join(fields)
+			raise Exception(errorString)		
 		try:
 			info = simplejson.loads(self.client._get_resource( url ))
 		except :
@@ -173,21 +174,6 @@ class NetflixDisc:
 		else:
 			return info
 			
-	def getSynopsis(self, url=None):		
-		if not url:
-			for link in self.info['link']:
-				if link['title'] == 'synopsis':
-					url = link['href']
-					print url
-		try:
-			info = simplejson.loads(self.client._get_resource( url ))
-		except :
-			return []
-		else:
-			return info
-
-
-
 class NetflixClient:
 	def __init__(self, name, key, secret, callback='',verbose=False):
 		self.connection = httplib.HTTPConnection("%s:%s" % (HOST, PORT))

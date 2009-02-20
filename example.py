@@ -19,12 +19,12 @@ for o, a in opts:
 		queuedisc = True
 	if o == '-a':
 		usertoken = True
-		
+
 APP_NAME   = ''
 API_KEY    = ''
 API_SECRET = ''
 CALLBACK   = ''
-
+		
 EXAMPLE_USER = {
         'request': {
                 'key': '',
@@ -35,6 +35,8 @@ EXAMPLE_USER = {
                 'secret': ''
         }
 }
+
+
 		
 netflix = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK)
 if usertoken:
@@ -58,21 +60,21 @@ if usertoken:
 discs=[]
 for arg in args:
   print "*** RETRIEVING MOVIES MATCHING %s ***" % arg
-  data = netflix.catalog.searchMovieTitles(arg)
-  for info in data['catalog_titles']['catalog_title']:
+  data = netflix.catalog.searchTitles(arg)
+  for info in data:
 	print info['title']['regular']
 	discs.append(info)
 
-  testSubject = data['catalog_titles']['catalog_title'][10]
+  testSubject = data[10]
   print simplejson.dumps(testSubject, indent=4)
   
   print "*** For demonstration purposes, we will arbitrarily pick the first result for the remaining tests ***"
   print "*** Retrieving additional information for %s ***" % (testSubject['title']['regular'])
 
   print "*** First thing, we'll search for 'Foo' as a string and see if that works ***"
-  autocomplete = netflix.catalog.searchStringMovieTitles('Foo')
+  autocomplete = netflix.catalog.searchStringTitles('Foo')
   print simplejson.dumps(autocomplete)
-  for info in autocomplete['autocomplete']['autocomplete_item']:
+  for info in autocomplete:
 	print info['title']['short']
 	
   print "*** Now we'll go ahead and try to retrieve the single movie via ID string ***"
@@ -82,11 +84,11 @@ for arg in args:
 
   print "*** Let's grab the format for this movie ***"
   disc = NetflixDisc(testSubject,netflix)
-  formats = disc.getAvailableFormats()
+  formats = disc.getInfo('formats')
   print "Formats: %s" % simplejson.dumps(formats,indent=4)
 
   print "*** And the synopsis ***"
-  synopsis = disc.getSynopsis()
+  synopsis = disc.getInfo('synopsis')
   print "Synopsis: %s" % simplejson.dumps(synopsis, indent=4)
 
   if queuedisc:
@@ -95,7 +97,11 @@ for arg in args:
 		else:
 			print netflix.user.queueDiscs( urls=[data['id']])
 
-print "*** Let's grab some ratings for all the titles that matched initially ***"
 if usertoken and discs:
+	print "*** Let's grab some ratings for all the titles that matched initially ***"
 	ratings =  netflix.user.getRatings( discs )
 	print "ratings = %s" % (simplejson.dumps(ratings,indent=4))
+else:
+	print "*** No authenticated user, so we'll just look at the average rating for the movies.***"
+	for disc in discs:
+		print "%s : %s" % (disc['title']['regular'],disc['average_rating'])

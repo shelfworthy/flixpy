@@ -21,27 +21,28 @@ EXAMPLE_USER = {
         }
 }
 
+
 class TestQuery():
 	def test_base(self):
 		netflixClient = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK)
 		
 	def test_searchMovieTitles(self):
 		netflixClient = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK)
-		data = netflixClient.catalog.searchMovieTitles(MOVIE_TITLE)
-		for info in data['catalog_titles']['catalog_title']:
+		data = netflixClient.catalog.searchTitles(MOVIE_TITLE)
+		for info in data:
 			assert isinstance(info['title']['regular'],unicode)
 
 	def test_searchStringMovieTitles(self):
 		netflixClient = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK)
-		data = netflixClient.catalog.searchStringMovieTitles('Foo')
-		for info in data['autocomplete']['autocomplete_item']:
+		data = netflixClient.catalog.searchStringTitles('Foo')
+		for info in data:
 			assert re.search('Foo',info['title']['short'])
 			
 	# DISC TESTS
 	def test_disc_functions(self):
 		netflixClient = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK)
-		data = netflixClient.catalog.searchMovieTitles(MOVIE_TITLE)
-		testSubject = data['catalog_titles']['catalog_title'][10]
+		data = netflixClient.catalog.searchTitles(MOVIE_TITLE)
+		testSubject = data[10]
 		disc = NetflixDisc(testSubject,netflixClient)
 		formats = disc.getAvailableFormats()
 		assert isinstance(formats,dict)
@@ -51,9 +52,8 @@ class TestQuery():
 	def test_user_functions(self):
 		netflixClient = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK)
 		netflixUser = NetflixUser(EXAMPLE_USER,netflixClient)
-		data = netflixClient.catalog.searchMovieTitles(MOVIE_TITLE)
-		discs = data['catalog_titles']['catalog_title']
-		ratings = netflixUser.getRatings(discs)
+		data = netflixClient.catalog.searcTitles(MOVIE_TITLE)
+		ratings = netflixUser.getRatings(data)
 
 if __name__ == '__main__':
     unittest.main() 

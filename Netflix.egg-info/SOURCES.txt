@@ -1,7 +1,11 @@
 Netflix.py
+README
+example.py
 setup.py
+test.py
 Netflix.egg-info/PKG-INFO
 Netflix.egg-info/SOURCES.txt
 Netflix.egg-info/dependency_links.txt
 Netflix.egg-info/requires.txt
 Netflix.egg-info/top_level.txt
+dist/Netflix-1.0-py2.5.egg

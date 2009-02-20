@@ -71,33 +71,23 @@ class NetflixUser():
 		request_url = '/users/%s/ratings/title' % (access_token.key)
 		if not urls:
 		           for disc in disc_info:
-		                   urls.append( disc['id'] )
+						urls.append(disc['id'])
 		parameters = { 'title_refs': ','.join(urls) }
 		
-		doc = parseString( self.client._get_resource( request_url, parameters=parameters, token=access_token ) )
+		info = simplejson.loads( self.client._get_resource( request_url, parameters=parameters, token=access_token ) )
 		
 		ret = {}
-		for title in doc.documentElement.getElementsByTagName('ratings_item'):
-		        links = title.getElementsByTagName('link')
-		        discid = ''
-		        for link in links:
-		                if link.getAttribute('rel')=='http://schemas.netflix.com/id':
-		                        discid = link.getAttribute('href')
-		        
-		        id2 = title.getElementsByTagName('id')[0].childNodes[0].data
-		        ratings = {
-		                'average': title.getElementsByTagName('average_rating')[0].childNodes[0].data,
-		                'predicted': title.getElementsByTagName('predicted_rating')[0].childNodes[0].data,
+		for title in info['ratings']['ratings_item']:
+				ratings = {
+		                'average': title['average_rating'],
+		                'predicted': title['predicted_rating'],
 		        }
-		        try:
-		                ratings['user'] = title.getElementsByTagName('user_rating')[0].childNodes[0].data
-		        except:
-		                noop=1
+				try:
+					ratings['user'] = title['user_rating']
+				except:
+					pass
 		        
-		        if id2 in urls:
-		                ret[ id2 ] = ratings
-		        else:
-		                ret[ discid ] = ratings
+				ret[ title['title']['regular'] ] = ratings
 		
 		return ret
 
@@ -123,11 +113,6 @@ class NetflixUser():
 			response = self.client._get_resource( request_url, token=access_token )
 			tag = re.search('<etag>(\d+)</etag>', response)
 			parameters['etag'] = tag.group(1)
-			print "THIS IS THE REQUEST"
-			print request_url
-			print access_token
-			print parameters
-			print "THAT WAS THE REQUEST"
 			response = self.client._post_resource( request_url, token=access_token, parameters=parameters )
 			return response
 
@@ -135,66 +120,62 @@ class NetflixCatalog():
 	def __init__(self,client):
 		self.client = client
 	
-	def searchMovieTitles(self, term):
+	def searchTitles(self, term,startIndex=None,maxResults=None):
 	   request_url = '/catalog/titles'
 	   parameters = {'term': term}
-	   
-	   doc = parseString( self.client._get_resource( request_url, parameters=parameters ) )
-	   
-	   best_result = doc.documentElement.getElementsByTagName('catalog_title')[0]
-	   info = {}
-	   info['title'] = best_result.getElementsByTagName('title')[0].getAttribute('regular')
-	   box_art = best_result.getElementsByTagName('box_art')[0]
-	   info['box_art'] = {
-	           'small': box_art.getAttribute('small'),
-	           'medium': box_art.getAttribute('medium'),
-	           'large': box_art.getAttribute('large')
-	   }
-	   info['release_year'] = best_result.getElementsByTagName('release_year')[0].childNodes[0].data
-	   info['average_rating'] = best_result.getElementsByTagName('average_rating')[0].childNodes[0].data
-	   info['genres']=[]
-	   info['links']={}
-	   for category in best_result.getElementsByTagName('category'):
-	           if category.getAttribute('scheme')=='http://api.netflix.com/categories/genres':
-	                   info['genres'].append( category.getAttribute('label') )
-	           if category.getAttribute('scheme')=='http://api.netflix.com/catalog/titles/mpaa_ratings':
-	                   info['rating'] = category.getAttribute('label')
-	   
-	   for link in best_result.getElementsByTagName('link'):
-	           if link.getAttribute('rel')=='http://schemas.netflix.com/id':
-					info['id'] = link.getAttribute('href')
-	           else:
-	           		info['links'][ link.getAttribute('title') ] = link.getAttribute('href')
-	   
-	   if not id in info:
-	           info['id'] = best_result.getElementsByTagName('id')[0].childNodes[0].data
-	   
-	   return info
+	   if startIndex:
+		   parameters['startIndex'] = startIndex
+	   if maxResults:
+		   parameters['maxResults'] = maxResults
+	   	   
+
+	   info = simplejson.loads( self.client._get_resource( request_url, parameters=parameters))
+
+	   return info['catalog_titles']['catalog_title']
 		
+	def searchStringTitles(self, term,startIndex=None,maxResults=None):
+	   request_url = '/catalog/titles/autocomplete'
+	   parameters = {'term': term}
+	   if startIndex:
+		   parameters['startIndex'] = startIndex
+	   if maxResults:
+		   parameters['maxResults'] = maxResults
+
+	   info = simplejson.loads( self.client._get_resource( request_url, parameters=parameters))
+	   print simplejson.dumps(info)
+	   return info['autocomplete']['autocomplete_item']
+	
+	def getMovie(self, url):
+	   request_url = url
+	   info = simplejson.loads( self.client._get_resource( request_url ))
+	   return info
+	
+	def searchString
+	
+		  
 
 class NetflixDisc:
 	def __init__(self,disc_info,client):
 		self.info = disc_info
 		self.client = client
 	
-	## gets the available formats for a given title
-	## provide either:
-	##   disc_info - the dict from get_disc_info
-	##   url       - the netflix id url
-	def getAvailableFormats(self, url=None):
+	def getInfo(self,field):
+		fields = []
+		url = ''
+		for link in self.info['link']:
+				fields.append(link['title'])
+				if link['title'] == field:
+					url = link['href']
 		if not url:
-			url = self.info['links']['formats']
-		
-		doc = parseString( self.client._get_resource( url ) )
-		
-		formats = []
-		for category in doc.documentElement.getElementsByTagName('category'):
-			if category.getAttribute('scheme')=='http://api.netflix.com/categories/title_formats':
-			     formats.append( category.getAttribute('label') )
-		return formats
-		
-
-
+			errorString = "Invalid or missing field.  Acceptable fields for this object are:\n" + "\n".join(fields)
+			raise Exception(errorString)		
+		try:
+			info = simplejson.loads(self.client._get_resource( url ))
+		except :
+			return []
+		else:
+			return info
+			
 class NetflixClient:
 	def __init__(self, name, key, secret, callback='',verbose=False):
 		self.connection = httplib.HTTPConnection("%s:%s" % (HOST, PORT))
@@ -211,8 +192,10 @@ class NetflixClient:
 		self.consumer = oauth.OAuthConsumer(self.CONSUMER_KEY, self.CONSUMER_SECRET)
 		self.signature_method_hmac_sha1 = oauth.OAuthSignatureMethod_HMAC_SHA1()
 	
-	def _get_resource(self, url, token=None, parameters=None):
-		url = "http://%s%s" % (HOST, url)
+	def _get_resource(self, url, token=None, parameters={}):
+		if not re.match('http',url):
+			url = "http://%s%s" % (HOST, url)
+		parameters['output'] = 'json'
 		oauth_request = oauth.OAuthRequest.from_consumer_and_token(self.consumer,
 								http_url=url,
 								parameters=parameters,
@@ -239,81 +222,3 @@ class NetflixClient:
 		self.connection.request('POST', url, body=oauth_request.to_postdata(), headers=headers)
 		response = self.connection.getresponse()
 		return response.read()
-
-
-#######################################################
-# example: netflix.py "The Professional" "Dark City"
-#    add to queue: netflix.py -q "The Professional"
-
-if __name__=="__main__":
-		import getopt
-		try:
-		        opts, args = getopt.getopt(sys.argv[1:], "qva")
-		except getopt.GetoptError, err:
-		        # print help information and exit:
-		        print str(err) # will print something like "option -a not recognized"
-		        sys.exit(2)
-		
-		queuedisc=False
-		verbose = False
-		usertoken = False
-		for o, a in opts:
-				if o == "-v":
-					verbose = True
-				if o == "-q":
-					queuedisc = True
-				if o == '-a':
-					usertoken = True
-		
-		APP_NAME   = 'Movie browser'
-		API_KEY    = 'nbf4kr594esg4af25qexwtnu'
-		API_SECRET = 'SSSeTdsPsM'
-		CALLBACK   = 'http://www.synedra.org'
-		
-		EXAMPLE_USER = {
-		        'request': {
-		                'key': 'hwq8evzp4z2btfx5en9pfkvt',
-		                'secret': 'btrdgnyQcVxZ'
-		        },
-		        'access': {
-		                'key': 'T1lSMROEioV5Fio4RCWnRgSKe2pqg.W7pOgp8jBlf_Z5CUp0_9CtnXOpU.iVC4uw8U7qkD4BmEZIZfTyJcJWfe6Q--',
-		                'secret': 'RjQcVfVvyPnZ'
-		        }
-		}
-		
-		netflix = NetflixClient(APP_NAME, API_KEY, API_SECRET,CALLBACK,verbose)
-		if usertoken:
-			netflix.user = NetflixUser(EXAMPLE_USER,netflix)
-			
-			if EXAMPLE_USER['request']['key'] and not EXAMPLE_USER['access']['key']:
-			  tok = netflix.user.getAccessToken( EXAMPLE_USER['request'] )
-			  print "now put this key / secret in EXAMPLE_USER.access so you don't have to re-authorize again:\n 'key': '%s',\n 'secret': '%s'\n" % (tok.key, tok.secret)
-			  EXAMPLE_USER['access']['key'] = tok.key
-			  EXAMPLE_USER['access']['secret'] = tok.secret
-			  sys.exit(1)
-			
-			elif not EXAMPLE_USER['access']['key']:
-			  (tok, url) = netflix.user.getRequestToken()
-			  print "Authorize user access here: %s" % url
-			  print "and then put this key / secret in EXAMPLE_USER.request:\n 'key': '%s',\n 'secret': '%s'\n" % (tok.key, tok.secret)
-			  print "and run again."
-			  sys.exit(1)
-
-		
-		discs=[]
-		for arg in args:
-		  data = netflix.catalog.searchMovieTitles(arg)
-		  for info in data:
-		        print "%s = %s" % (info, data[info])
-		  disc = NetflixDisc(data,netflix)
-		  formats = disc.getAvailableFormats()
-		  print "formats = %s" % (formats)
-		  if queuedisc:
-				if not usertoken:
-					print "Unable to add to queue without authorization (using -a)"
-				else:
-					print netflix.user.queueDiscs( urls=[data['id']])
-		  discs.append( data )
-		if usertoken and discs:
-			ratings =  netflix.user.getRatings( discs )
-			print "ratings = %s" % (ratings)
