@@ -26,6 +26,19 @@ API_KEY    = ''
 API_SECRET = ''
 CALLBACK   = ''
 		
+EXAMPLE_USER = {
+        'request': {
+                'key': '',
+                'secret': ''
+        },
+        'access': {
+                'key': '',
+                'secret': ''
+        }
+}
+
+
+
 netflix = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK, verbose)
 if usertoken:
 	netflix.user = NetflixUser(EXAMPLE_USER,netflix)
@@ -47,8 +60,7 @@ if usertoken:
 
 discs=[]
 for arg in args:
-  while (0):
- 	 ######################################
+  	 ######################################
 	  # Search for titles matching a string.
 	  # To view all of the returned object, 
 	  # you can add a simplejson.dumps(info)
@@ -139,35 +151,34 @@ if usertoken:
 	user = netflix.user.getData()
 	print "%s %s" % (user['first_name'], user['last_name'])
 	print simplejson.dumps(user,indent=4)
-	while (0) :
-		######################################
-		# User subinfo is accessed similarly
-		# to disc subinfo.  Find the field
-		# describing the thing you want, then
-		# retrieve that url and get that info
-		######################################
-		print "*** What are their feeds? ***"
-		feeds = netflix.user.getInfo('feeds')
-		print simplejson.dumps(feeds,indent=4)
-	
-		print "*** Do they have anything at home? ***"
-		feeds = netflix.user.getInfo('at home')
-		print simplejson.dumps(feeds,indent=4)
-	
-		print "*** Show me their recommendations ***"
-		recommendations = netflix.user.getInfo('recommendations')
-		print simplejson.dumps(recommendations,indent=4)
-	
-		######################################
-		# Rental History
-		######################################
-		# Simple rental history
-		history = netflix.user.getRentalHistory()
-		print simplejson.dumps(history,indent=4)
-	
-		# A little more complicated, let's use mintime to get recent shipments
-		history = netflix.user.getRentalHistory('shipped',updatedMin=1219775019,maxResults=4)
-		print simplejson.dumps(history,indent=4)
+	######################################
+	# User subinfo is accessed similarly
+	# to disc subinfo.  Find the field
+	# describing the thing you want, then
+	# retrieve that url and get that info
+	######################################
+	print "*** What are their feeds? ***"
+	feeds = netflix.user.getInfo('feeds')
+	print simplejson.dumps(feeds,indent=4)
+
+	print "*** Do they have anything at home? ***"
+	feeds = netflix.user.getInfo('at home')
+	print simplejson.dumps(feeds,indent=4)
+
+	print "*** Show me their recommendations ***"
+	recommendations = netflix.user.getInfo('recommendations')
+	print simplejson.dumps(recommendations,indent=4)
+
+	######################################
+	# Rental History
+	######################################
+	# Simple rental history
+	history = netflix.user.getRentalHistory()
+	print simplejson.dumps(history,indent=4)
+
+	# A little more complicated, let's use mintime to get recent shipments
+	history = netflix.user.getRentalHistory('shipped',updatedMin=1219775019,maxResults=4)
+	print simplejson.dumps(history,indent=4)
 
 	######################################
 	# Here's a queue.  Let's play with it
