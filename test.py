@@ -61,8 +61,8 @@ class TestQuery():
 	# DISC TESTS
 	def test_disc_functions(self):
 		netflixClient = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK)
-		data = netflixClient.catalog.searchTitles(MOVIE_TITLE)
-		testSubject = data[10]
+		data = netflixClient.catalog.searchTitles('Cocoon',1,2)
+		testSubject = data[0]
 		disc = NetflixDisc(testSubject,netflixClient)
 		formats = disc.getInfo('formats')
 		assert isinstance(formats,dict)
@@ -74,10 +74,21 @@ class TestQuery():
 		netflixUser = NetflixUser(EXAMPLE_USER,netflixClient)
 		user = netflixUser.getData()
 		assert isinstance(user['first_name'],unicode)
-		data = netflixClient.catalog.searchTitles(MOVIE_TITLE)
+		data = netflixClient.catalog.searchTitles('Cocoon',1,2)
 		ratings = netflixUser.getRatings(data)
 		history = netflixUser.getRentalHistory('shipped',updatedMin=1219775019,maxResults=4)
 		assert int(history['rental_history']['number_of_results']) <= 5
+		
+		queue = NetflixUserQueue(netflixUser)
+		response = queue.addTitle( urls=["http://api.netflix.com/catalog/titles/movies/60002013"] )
+		response = queue.addTitle( urls=["http://api.netflix.com/catalog/titles/movies/60002013"], position=1 )
+		response = queue.removeTitle( id="60002013")
+
+		discAvailable = queue.getAvailable('disc')
+		instantAvailable =  queue.getAvailable('instant')
+		discSaved =  queue.getSaved('disc')
+		instantSaved = queue.getSaved('instant')
+		
 
 if __name__ == '__main__':
     unittest.main() 

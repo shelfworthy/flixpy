@@ -3,13 +3,14 @@ __version__ = "$Rev$"
 __date_ = "$Date$"
 
 import sys
-
+import os.path
 import re
 import oauth.oauth as oauth
 import httplib
 import time
 from xml.dom.minidom import parseString
 import simplejson
+from urlparse import urlparse
 
 HOST 			  = 'api.netflix.com'
 PORT              = '80'
@@ -126,24 +127,6 @@ class NetflixUser():
 		
 		return ret
 
-	def queueDiscs(self, discInfo=[], urls=[]):
-		accessToken=self.accessToken
-		
-		if not isinstance(accessToken, oauth.OAuthToken):
-			accessToken = oauth.OAuthToken( accessToken['key'], accessToken['secret'] )
-		
-		requestUrl = '/users/%s/queues/disc' % (accessToken.key)
-		if not urls:
-			for disc in discInfo:
-				urls.append( disc['id'] )
-		parameters = { 'title_ref': ','.join(urls) }
-		
-		response = simplejson.loads(self.client._getResource( requestUrl, token=accessToken ))
-		tag = response["queue"]["etag"]
-		response = self.client._postResource( requestUrl, token=accessToken, parameters=parameters )
-		print response
-		return response
-		
 	def getRentalHistory(self,type=None,startIndex=None,maxResults=None,updatedMin=None):
 		accessToken=self.accessToken
 		parameters = {}
@@ -162,8 +145,11 @@ class NetflixUser():
 		else:
 			requestUrl = '/users/%s/rental_history/%s' % (accessToken.key,type)
 		
-		info = simplejson.loads( self.client._getResource( requestUrl, parameters=parameters, token=accessToken ) )
-
+		try:
+			info = simplejson.loads( self.client._getResource( requestUrl, parameters=parameters, token=accessToken ) )
+		except:
+			return {}
+			
 		return info
 		
 class NetflixCatalog():
@@ -221,6 +207,119 @@ class NetflixCatalog():
 			return {}
 		return info		  
 
+class NetflixUserQueue:
+	def __init__(self,user):
+		self.user = user
+		self.client = user.client
+		self.tag = None
+
+	def getContents(self, sort=None, startIndex=None, maxResults=None, updatedMin=None):
+		parameters={}
+		if startIndex:
+			parameters['start_index'] = startIndex
+		if maxResults:
+			parameters['max_results'] = maxResults
+		if updatedMin:
+			parameters['updated_min'] = updatedMin
+		if sort and sort in ('queue_sequence','date_added','alphabetical'):
+			parameters['sort'] = sort
+		
+		requestUrl = '/users/%s/queues' % (self.user.accessToken.key)
+		try:
+			info = simplejson.loads(self.client._getResource( requestUrl, parameters=parameters, token=self.user.accessToken ))
+		except :
+			return []
+		else:
+			return info
+			
+	def getAvailable(self, sort=None, startIndex=None, maxResults=None, updatedMin=None,type='disc'):
+		parameters={}
+		if startIndex:
+			parameters['start_index'] = startIndex
+		if maxResults:
+			parameters['max_results'] = maxResults
+		if updatedMin:
+			parameters['updated_min'] = updatedMin
+		if sort and sort in ('queue_sequence','date_added','alphabetical'):
+			parameters['sort'] = sort
+
+		requestUrl = '/users/%s/queues/%s/available' % (self.user.accessToken.key,type)
+		try:
+			info = simplejson.loads(self.client._getResource( requestUrl, parameters=parameters, token=self.user.accessToken ))
+		except :
+			return []
+		else:
+			return info
+
+	def getSaved(self, sort=None, startIndex=None, maxResults=None, updatedMin=None,type='disc'):
+		parameters={}
+		if startIndex:
+			parameters['start_index'] = startIndex
+		if maxResults:
+			parameters['max_results'] = maxResults
+		if updatedMin:
+			parameters['updated_min'] = updatedMin
+		if sort and sort in ('queue_sequence','date_added','alphabetical'):
+			parameters['sort'] = sort
+
+		requestUrl = '/users/%s/queues/%s/saved' % (self.user.accessToken.key,type)
+		try:
+			info = simplejson.loads(self.client._getResource( requestUrl, parameters=parameters, token=self.user.accessToken ))
+		except :
+			return []
+		else:
+			return info
+
+	def addTitle(self, discInfo=[], urls=[],type='disc',position=None):
+		accessToken=self.user.accessToken
+		parameters={}
+		if position:
+			parameters['position'] = position
+			
+		if not isinstance(accessToken, oauth.OAuthToken):
+			accessToken = oauth.OAuthToken( accessToken['key'], accessToken['secret'] )
+
+		requestUrl = '/users/%s/queues/disc' % (accessToken.key)
+		if not urls:
+			for disc in discInfo:
+				urls.append( disc['id'] )
+		parameters = { 'title_ref': ','.join(urls) }
+
+		if not self.tag:
+			response = self.client._getResource( requestUrl, token=accessToken )
+			response = simplejson.loads(response)
+			self.tag = response["queue"]["etag"]
+		parameters['etag'] = self.tag
+		response = self.client._postResource( requestUrl, token=accessToken, parameters=parameters )
+		return response
+
+	def removeTitle(self, id, type='disc'):
+		accessToken=self.user.accessToken
+		entryID = None
+		parameters={}
+		if not isinstance(accessToken, oauth.OAuthToken):
+			accessToken = oauth.OAuthToken( accessToken['key'], accessToken['secret'] )
+
+		# First, we gotta find the entry to delete
+		queueparams = {'max_results' : 500}
+		requestUrl = '/users/%s/queues/disc' % (accessToken.key)
+		response = self.client._getResource( requestUrl, token=accessToken,parameters=queueparams )
+		print "Response is " + response
+		response = simplejson.loads(response)
+		titles = response["queue"]["queue_item"]
+		
+		for disc in titles:
+			discID = os.path.basename(urlparse(disc['id']).path)
+			if discID == id:
+				entryID = disc['id']
+
+		if not entryID:
+			return
+		firstResponse = self.client._getResource( entryID, token=accessToken, parameters=parameters )
+		
+		response = self.client._deleteResource( entryID, token=accessToken )
+		return response
+
 class NetflixDisc:
 	def __init__(self,discInfo,client):
 		self.info = discInfo
@@ -276,7 +375,9 @@ class NetflixClient:
 		return response.read()
 	
 	def _postResource(self, url, token=None, parameters=None):
-		url = "http://%s%s" % (HOST, url)
+		if not re.match('http',url):
+			url = "http://%s%s" % (HOST, url)
+		
 		oauthRequest = oauth.OAuthRequest.from_consumer_and_token(	self.consumer,
 								http_url=url,
 								parameters=parameters,
@@ -284,7 +385,28 @@ class NetflixClient:
 								http_method='POST')
 		oauthRequest.sign_request(self.signature_method_hmac_sha1, self.consumer, token)
 		
+		if (self.verbose):
+		        print "POSTING TO" + oauthRequest.to_url()
+		
 		headers = {'Content-Type' :'application/x-www-form-urlencoded'}
 		self.connection.request('POST', url, body=oauthRequest.to_postdata(), headers=headers)
+		response = self.connection.getresponse()
+		return response.read()
+		
+	def _deleteResource(self, url, token=None, parameters=None):
+		if not re.match('http',url):
+			url = "http://%s%s" % (HOST, url)
+		
+		oauthRequest = oauth.OAuthRequest.from_consumer_and_token(	self.consumer,
+								http_url=url,
+								parameters=parameters,
+								token=token,
+								http_method='DELETE')
+		oauthRequest.sign_request(self.signature_method_hmac_sha1, self.consumer, token)
+
+		if (self.verbose):
+		        print "DELETING FROM" + oauthRequest.to_url()
+
+		self.connection.request('DELETE', oauthRequest.to_url())
 		response = self.connection.getresponse()
 		return response.read()
