@@ -106,8 +106,11 @@ class NetflixUser():
 		
 		requestUrl = '/users/%s/ratings/title' % (accessToken.key)
 		if not urls:
+			if isinstance(discInfo,list):
 		           for disc in discInfo:
 						urls.append(disc['id'])
+			else:
+				urls.append(discInfo['id'])
 		parameters = { 'title_refs': ','.join(urls) }
 		
 		info = simplejson.loads( self.client._getResource( requestUrl, parameters=parameters, token=accessToken ) )
@@ -186,7 +189,7 @@ class NetflixCatalog():
 
 	def searchPeople(self, term,startIndex=None,maxResults=None):
 	   requestUrl = '/catalog/people'
-	   parameters = {'term': term}
+	   parameters = {'term': term, 'expand': 'filmography','max_results':'15','start_index':0}
 	   if startIndex:
 		   parameters['start_index'] = startIndex
 	   if maxResults:
