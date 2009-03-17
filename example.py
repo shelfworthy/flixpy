@@ -20,6 +20,21 @@ EXAMPLE_USER = {
         }
 }
 
+APP_NAME   = 'Movie browser'
+API_KEY    = 'nbf4kr594esg4af25qexwtnu'
+API_SECRET = 'SSSeTdsPsM'
+CALLBACK   = 'http://www.synedra.org'
+
+EXAMPLE_USER = {
+        'request': {
+                'key': 'guzwtx7epxmbder6dx5n2t7a',
+                'secret': 'D8HrxmaQ7YRr'
+        },
+        'access': {
+                'key': 'T1i0pqrkyEfVCl3NVbrSCMvFg0fPup3TsQ7bAQjN35XZcmuS9WDK7oVOkZdE6iGg8HkhEp4VQn7sSB.kILNu2HiQ--',
+                'secret': 'efMFPEPZ35f6'
+        }
+}
 
 def getAuth(netflix, verbose):
     netflix.user = NetflixUser(EXAMPLE_USER,netflix)
@@ -138,7 +153,6 @@ def getUserInfo(netflix,user):
     print "*** Who is this person? ***"
     userData = user.getData()
     print "%s %s" % (userData['first_name'], userData['last_name'])
-    print simplejson.dumps(user,indent=4)
     
     ######################################
     # User subinfo is accessed similarly
@@ -212,7 +226,7 @@ if __name__ == '__main__':
 
     netflixClient = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK, verbose)
     if usertoken:
-        user = getAuth(netflix,verbose)
+        user = getAuth(netflixClient,verbose)
     else:
         user = None
     discs=[]

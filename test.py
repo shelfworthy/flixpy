@@ -32,6 +32,22 @@ EMPTY_USER = {
         }
 }
 
+APP_NAME   = 'Movie browser'
+API_KEY    = 'nbf4kr594esg4af25qexwtnu'
+API_SECRET = 'SSSeTdsPsM'
+CALLBACK   = 'http://www.synedra.org'
+
+EXAMPLE_USER = {
+        'request': {
+                'key': 'guzwtx7epxmbder6dx5n2t7a',
+                'secret': 'D8HrxmaQ7YRr'
+        },
+        'access': {
+                'key': 'T1i0pqrkyEfVCl3NVbrSCMvFg0fPup3TsQ7bAQjN35XZcmuS9WDK7oVOkZdE6iGg8HkhEp4VQn7sSB.kILNu2HiQ--',
+                'secret': 'efMFPEPZ35f6'
+        }
+}
+
 class TestQuery():
 	def test_base(self):
 		netflixClient = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK)
