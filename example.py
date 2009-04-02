@@ -20,10 +20,7 @@ EXAMPLE_USER = {
         }
 }
 
-APP_NAME   = 'Movie browser'
-API_KEY    = 'nbf4kr594esg4af25qexwtnu'
-API_SECRET = 'SSSeTdsPsM'
-CALLBACK   = 'http://www.synedra.org'
+
 
 def getAuth(netflix, verbose):
     netflix.user = NetflixUser(EXAMPLE_USER,netflix)
