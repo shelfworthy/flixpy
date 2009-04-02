@@ -25,17 +25,6 @@ API_KEY    = 'nbf4kr594esg4af25qexwtnu'
 API_SECRET = 'SSSeTdsPsM'
 CALLBACK   = 'http://www.synedra.org'
 
-EXAMPLE_USER = {
-        'request': {
-                'key': 'guzwtx7epxmbder6dx5n2t7a',
-                'secret': 'D8HrxmaQ7YRr'
-        },
-        'access': {
-                'key': 'T1i0pqrkyEfVCl3NVbrSCMvFg0fPup3TsQ7bAQjN35XZcmuS9WDK7oVOkZdE6iGg8HkhEp4VQn7sSB.kILNu2HiQ--',
-                'secret': 'efMFPEPZ35f6'
-        }
-}
-
 def getAuth(netflix, verbose):
     netflix.user = NetflixUser(EXAMPLE_USER,netflix)
     
@@ -61,7 +50,7 @@ def doSearch(netflix, discs, arg):
     # you can add a simplejson.dumps(info)
     ######################################  
     print "*** RETRIEVING MOVIES MATCHING %s ***" % arg
-    data = netflix.catalog.searchTitles(arg,1,10)
+    data = netflix.catalog.searchTitles(arg,0,10)
     for info in data:
         print info['title']['regular']
         discs.append(info)
