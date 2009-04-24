@@ -19,6 +19,8 @@ If you found something you aren't sure how to fix or have feature suggestions, p
 install
 -------
 
+make sure you have [simplejson] (https://svn.red-bean.com/bob/simplejson/tags/simplejson-1.3/docs/index.html) installed (if you are using django, like I am, you have simplejson already!)
+
 just make sure netflix.py is on your python path.
 
 setup
