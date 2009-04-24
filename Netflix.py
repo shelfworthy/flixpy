@@ -4,7 +4,10 @@ from xml.dom.minidom import parseString
 from urlparse import urlparse
 from datetime import datetime
 
-from django.utils import simplejson
+try:
+    import simplejson
+except ImportError:
+    from django.utils import simplejson
 
 HOST              = 'api.netflix.com'
 PORT              = '80'
