@@ -1,17 +1,10 @@
-#
-# Library for accessing the REST API from Netflix
-# Represents each resource in an object-oriented way
-#
-
-import sys
-import os.path
-import re
+import sys, os.path, re, httplib, time, urllib2, urllib
 import oauth.oauth as oauth
-import httplib
-import time
 from xml.dom.minidom import parseString
-import simplejson
 from urlparse import urlparse
+from datetime import datetime
+
+from django.utils import simplejson
 
 HOST              = 'api.netflix.com'
 PORT              = '80'
@@ -25,7 +18,6 @@ class NetflixError(Exception):
 
 
 class NetflixUser():
-
     def __init__(self, user, client):
         self.requestTokenUrl = REQUEST_TOKEN_URL
         self.accessTokenUrl  = ACCESS_TOKEN_URL
@@ -34,6 +26,37 @@ class NetflixUser():
                                              user['access']['secret'] )
         self.client = client
         self.data = None
+
+    @property
+    def name(self):
+        first = self.getData()['first_name']
+        last = self.getData()['last_name']
+
+        return "%s %s" % (first, last)
+
+    @property
+    def preferred_formats(self):
+        if isinstance(self.getData()['preferred_formats']['category'], list):
+            formats = []
+            for format in self.getData()['preferred_formats']['category']:
+                formats.append(format['term'])
+            return formats
+        else:
+            return [self.getData()['preferred_formats']['category']['term']]
+
+    @property
+    def can_instant_watch(self):
+        return self.getData()['can_instant_watch'] == 'true'
+
+    @property
+    def at_home(self):
+        if isinstance(self.getInfo('at home')['at_home']['at_home_item'], list):
+            movies = []
+            for raw_movie in self.getInfo('at home')['at_home']['at_home_item']:
+                movies.append(NetflixDisc(raw_movie,self.client))
+            return movies
+        else:
+            return [NetflixDisc(self.getInfo('at home')['at_home']['at_home_item'],self.client)]
 
     def getRequestToken(self):
         client = self.client
@@ -80,6 +103,7 @@ class NetflixUser():
                                     self.accessTokenUrl,
                                     headers=oauthRequest.to_header())
         response = client.connection.getresponse()
+
         accessToken = oauth.OAuthToken.from_string(response.read())
         return accessToken
     
@@ -196,10 +220,9 @@ class NetflixUser():
         
 
 class NetflixCatalog():
-
     def __init__(self,client):
         self.client = client
-    
+
     def searchTitles(self, term,startIndex=None,maxResults=None):
         requestUrl = '/catalog/titles'
         parameters = {'term': term}
@@ -255,11 +278,9 @@ class NetflixCatalog():
             info = simplejson.loads( self.client._getResource( requestUrl ))
         except:
             return {}
-        return info       
+        return info
 
- 
 class NetflixUserQueue:
-
     def __init__(self,user):
         self.user = user
         self.client = user.client
@@ -405,13 +426,31 @@ class NetflixUserQueue:
         response = self.client._deleteResource( entryID, token=accessToken )
         return response
 
-
-class NetflixDisc:
-
-    def __init__(self,discInfo,client):
-        self.info = discInfo
+class NetflixPerson:
+    def __init__(self,personInfo,client):
+        self.info = personInfo
         self.client = client
-    
+
+    @property
+    def id(self):
+        return self.info['id'].split('/')[-1]
+
+    @property
+    def name(self):
+        return self.info['name']
+
+    @property
+    def filmography(self):
+        raw_films = self.getInfo('filmography')['filmography']['filmography_item']
+
+        if isinstance(raw_films, list):
+            films = []
+            for film in raw_films:
+                films.append(NetflixDisc(film,self.client))
+            return films
+        else:
+            return NetflixDisc(raw_films,self.client)
+
     def getInfo(self,field):
         fields = []
         url = ''
@@ -421,7 +460,7 @@ class NetflixDisc:
                 url = link['href']
         if not url:
             errorString =          "Invalid or missing field.  " + \
-                                    "Acceptable fields for this object are:" + \
+                                    "Acceptable fields for this object are:\n" + \
                                     "\n\n".join(fields)
             print errorString
             sys.exit(1)
@@ -431,10 +470,124 @@ class NetflixDisc:
             return []
         else:
             return info
- 
-           
-class NetflixClient:
 
+class NetflixDisc:
+    def __init__(self,discInfo,client):
+        self.info = discInfo
+        self.client = client
+
+    @property
+    def id(self):
+        return self.info['id'].split('/')[-1]
+
+    @property
+    def disc_number(self):
+        raw_title = self.info['title']['regular']
+        try:
+            result = re.search(': Disc \d+$',raw_title)
+            return int(result.group().strip(': Disc'))
+        except AttributeError:
+            return False
+
+    @property
+    def title(self):
+        raw_title = self.info['title']['regular']
+        title = re.split(': Disc \d+$',raw_title)[0]
+        return title
+
+    @property
+    def length(self):
+        seconds = int(self.info['runtime'])
+        return seconds/60
+
+    @property
+    def mpaa_rating(self):
+        for i in self.info['category']:
+            if i['scheme'] == 'http://api.netflix.com/categories/mpaa_ratings':
+                return i['term']
+        return None
+
+    @property
+    def tv_rating(self):
+        for i in self.info['category']:
+            if i['scheme'] == 'http://api.netflix.com/categories/tv_ratings':
+                return i['term']
+        return None
+
+    @property
+    def formats(self):
+        raw_formats = self.getInfo('formats')['delivery_formats']['availability']
+        if isinstance(raw_formats, list):
+            formats = []
+            for format in raw_formats:
+                format_name = format['category']['term']
+                release_date = datetime.fromtimestamp(float(format['available_from']))
+                formats.append({'format':format_name, 'release_date': release_date})
+            return formats
+        else:
+            format_name = raw_formats['category']['term']
+            release_date = datetime.fromtimestamp(float(raw_formats['available_from']))
+            return [{'format':format_name, 'release_date': release_date}]
+
+    @property
+    def directors(self):
+        raw_directors = self.getInfo('directors')
+        raw_directors = raw_directors['people']['person']
+        if isinstance(raw_directors, list):
+            directors = []
+            for director in raw_directors:
+                directors.append(NetflixPerson(director, self.client))
+            return directors
+        else:
+            return NetflixPerson(raw_directors, self.client)
+
+    @property
+    def cast(self):
+        raw_cast = self.getInfo('cast')
+        raw_cast = raw_cast['people']['person']
+        if isinstance(raw_cast, list):
+            people = []
+            for person in raw_cast:
+                people.append(NetflixPerson(person, self.client))
+            return people
+        else:
+            return NetflixPerson(raw_cast, self.client)
+
+    @property
+    def release_year(self):
+        try:
+            return self.info['release_year']
+        except KeyError:
+            return None
+
+    @property
+    def shipped_date(self):
+        try:
+            return datetime.fromtimestamp(float(self.info['shipped_date']))
+        except KeyError:
+            return None
+
+    def getInfo(self,field):
+        fields = []
+        url = ''
+        for link in self.info['link']:
+            fields.append(link['title'])
+            if link['title'] == field:
+                url = link['href']
+        if not url:
+            errorString =          "Invalid or missing field.  " + \
+                                    "Acceptable fields for this object are:\n" + \
+                                    "\n\n".join(fields)
+            print errorString
+            sys.exit(1)
+        try:
+            info = simplejson.loads(self.client._getResource( url ))
+        except:
+            return []
+        else:
+            return info
+
+class NetflixClient:
     def __init__(self, name, key, secret, callback='',verbose=False):
         self.connection = httplib.HTTPConnection("%s:%s" % (HOST, PORT))
         self.server = HOST
@@ -451,7 +604,7 @@ class NetflixClient:
                                     self.CONSUMER_SECRET)
         self.signature_method_hmac_sha1 = \
                                     oauth.OAuthSignatureMethod_HMAC_SHA1()
-    
+
     def _getResource(self, url, token=None, parameters={}):
         if not re.match('http',url):
             url = "http://%s%s" % (HOST, url)
@@ -467,8 +620,9 @@ class NetflixClient:
                                     token)
         if (self.verbose):
             print oauthRequest.to_url()
-        self.connection.request('GET', oauthRequest.to_url())
-        response = self.connection.getresponse()
+        # self.connection.request('GET', oauthRequest.to_url())
+        # response = self.connection.getresponse()
+        response = urllib2.urlopen(oauthRequest.to_url())
         return response.read()
     
     def _postResource(self, url, token=None, parameters=None):
