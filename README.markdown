@@ -10,6 +10,12 @@ I hope to have time to update it soon.
 
 for now here are some examples of how my interface works once you have an authenticated user (you can authenticate, for now, using the existing example.py)
 
+bugs
+----
+
+As I'm not exactly the best python programmer, I'm sure there will be bugs and suggestions. Please fork and help out if you are able.
+If you found something you aren't sure how to fix or have feature suggestions, please be feel to visit (lighthouse) [http://chrisdrackett.lighthouseapp.com/projects/29770-pyflix] and open a ticket.
+
 install
 -------
 
