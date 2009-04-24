@@ -1,3 +1,6 @@
+pyflix readme
+-------------
+
 This is a branch of [pyflix] (http://code.google.com/p/pyflix/) that's goal is to make the python API easer to work with.
 The goal is to take pure json output and instead output formats that make sense with the data that is being requested.
 
@@ -6,6 +9,11 @@ The example currently only shows how to work with the code in the old way at the
 I hope to have time to update it soon.
 
 for now here are some examples of how my interface works once you have an authenticated user (you can authenticate, for now, using the existing example.py)
+
+install
+-------
+
+just make sure netflix.py is on your python path.
 
 setup
 -----
