@@ -1,6 +1,6 @@
 # Sample code to use the Netflix python client
 
-from Netflix import *
+from netflix import *
 import getopt
 import time 
 

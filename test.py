@@ -1,7 +1,7 @@
 # Sample code to use the Netflix python client
 import unittest, os
 import simplejson
-from Netflix import *
+from netflix import *
 
 APP_NAME   = ''
 API_KEY    = ''
