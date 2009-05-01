@@ -239,6 +239,21 @@ class NetflixCatalog():
 
         return info['catalog_titles']['catalog_title']
 
+    @property
+    def index(self):
+        requestUrl = '/catalog/titles/index'
+
+        self.user.getAccessToken
+
+        info = simplejson.loads( self.client._getResource( 
+                                    requestUrl,
+                                    self.user.getAccessToken,
+                                    {},
+                                    True
+                                    ))
+
+        return info
+
     def searchStringTitles(self, term,startIndex=None,maxResults=None):
         requestUrl = '/catalog/titles/autocomplete'
         parameters = {'term': term}
@@ -608,10 +623,11 @@ class NetflixClient:
         self.signature_method_hmac_sha1 = \
                                     oauth.OAuthSignatureMethod_HMAC_SHA1()
 
-    def _getResource(self, url, token=None, parameters={}):
+    def _getResource(self, url, token=None, parameters={}, xml=False):
         if not re.match('http',url):
             url = "http://%s%s" % (HOST, url)
-        parameters['output'] = 'json'
+        if not xml:
+            parameters['output'] = 'json'
         oauthRequest = oauth.OAuthRequest.from_consumer_and_token(
                                     self.consumer,
                                     http_url=url,
@@ -621,8 +637,7 @@ class NetflixClient:
                                     self.signature_method_hmac_sha1,
                                     self.consumer,
                                     token)
-        if (self.verbose):
-            print oauthRequest.to_url()
+        print oauthRequest.to_url()
         # self.connection.request('GET', oauthRequest.to_url())
         # response = self.connection.getresponse()
         response = urllib2.urlopen(oauthRequest.to_url())
