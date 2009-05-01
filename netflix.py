@@ -243,12 +243,12 @@ class NetflixCatalog():
     def index(self):
         requestUrl = '/catalog/titles/index'
 
-        info = simplejson.loads(self.client._getResource(
+        info = self.client._getResource(
                                     requestUrl,
                                     self.client.user.accessToken,
                                     {},
                                     True
-                                    ))
+                                    )
 
         return info
 
