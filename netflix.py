@@ -233,7 +233,7 @@ class NetflixCatalog():
             parameters['start_index'] = startIndex
         if maxResults:
             parameters['max_results'] = maxResults
-        info = simplejson.loads( self.client._getResource( 
+        info = simplejson.loads( self.client._getResource(
                                     requestUrl,
                                     parameters=parameters))
 
@@ -243,9 +243,9 @@ class NetflixCatalog():
     def index(self):
         requestUrl = '/catalog/titles/index'
 
-        info = simplejson.loads( self.client._getResource( 
+        info = simplejson.loads(self.client._getResource(
                                     requestUrl,
-                                    self.client.user.getAccessToken,
+                                    self.client.user.accessToken,
                                     {},
                                     True
                                     ))
@@ -260,7 +260,7 @@ class NetflixCatalog():
         if maxResults:
             parameters['max_results'] = maxResults
 
-        info = simplejson.loads( self.client._getResource( 
+        info = simplejson.loads( self.client._getResource(
                                     requestUrl,
                                     parameters=parameters))
         print simplejson.dumps(info)
