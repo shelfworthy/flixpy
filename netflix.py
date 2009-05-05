@@ -605,7 +605,7 @@ class NetflixDisc:
 
 class NetflixClient:
     def __init__(self, name, key, secret, callback='',verbose=False):
-        self.connection = httplib.HTTPConnection("%s:%s" % (HOST, PORT))
+        self.connection = httplib.HTTPConnection(HOST, PORT)
         self.server = HOST
         self.verbose = verbose
         self.user = None
@@ -638,6 +638,7 @@ class NetflixClient:
         print oauthRequest.to_url()
         # self.connection.request('GET', oauthRequest.to_url())
         # response = self.connection.getresponse()
+
         response = urllib2.urlopen(oauthRequest.to_url())
         return response.read()
     
@@ -659,7 +660,9 @@ class NetflixClient:
         if (self.verbose):
             print "POSTING TO" + oauthRequest.to_url()
         
-        headers = {'Content-Type':'application/x-www-form-urlencoded'}
+        headers = {'Content-Type':'application/x-www-form-urlencoded',
+                   'Accept-encoding':'gzip'}
+
         self.connection.request('POST', url, 
                                     body=oauthRequest.to_postdata(), 
                                     headers=headers)
