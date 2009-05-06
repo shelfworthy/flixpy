@@ -86,16 +86,16 @@ class NetflixUser():
                                     http_url=self.authorizationUrl,
                                     parameters=params)
 
-        return ( requestToken, oauthRequest.to_url() )
+        return (requestToken, oauthRequest.to_url())
    
     def getAccessToken(self, requestToken):
         client = self.client
         
         if not isinstance(requestToken, oauth.OAuthToken):
-                requestToken = oauth.OAuthToken( 
-                                    requestToken['key'], 
-                                    requestToken['secret'] )
-        oauthRequest = oauth.OAuthRequest.from_consumer_and_token(  
+                requestToken = oauth.OAuthToken(
+                                    requestToken['key'],
+                                    requestToken['secret'])
+        oauthRequest = oauth.OAuthRequest.from_consumer_and_token(
                                     client.consumer,
                                     token=requestToken,
                                     http_url=self.accessTokenUrl)
@@ -114,15 +114,15 @@ class NetflixUser():
         accessToken=self.accessToken
 
         if not isinstance(accessToken, oauth.OAuthToken):
-            accessToken = oauth.OAuthToken( 
-                                    accessToken['key'], 
-                                    accessToken['secret'] )
+            accessToken = oauth.OAuthToken(
+                                    accessToken['key'],
+                                    accessToken['secret'])
         
         requestUrl = '/users/%s' % (accessToken.key)
         
-        info = simplejson.loads( self.client._getResource( 
-                                    requestUrl, 
-                                    token=accessToken ) )
+        info = simplejson.loads( self.client._getResource(
+                                    requestUrl,
+                                    token=accessToken))
         self.data = info['user']
         return self.data
         
@@ -146,7 +146,7 @@ class NetflixUser():
             print errorString
             sys.exit(1)
         try:
-            info = simplejson.loads(self.client._getResource( 
+            info = simplejson.loads(self.client._getResource(
                                     url,token=accessToken ))
         except:
             return []
@@ -170,9 +170,9 @@ class NetflixUser():
                 urls.append(discInfo['id'])
         parameters = { 'title_refs': ','.join(urls) }
         
-        info = simplejson.loads( self.client._getResource( 
-                                    requestUrl, 
-                                    parameters=parameters, 
+        info = simplejson.loads( self.client._getResource(
+                                    requestUrl,
+                                    parameters=parameters,
                                     token=accessToken ) )
         
         ret = {}
@@ -202,9 +202,9 @@ class NetflixUser():
             parameters['updated_min'] = updatedMin
 
         if not isinstance(accessToken, oauth.OAuthToken):
-            accessToken = oauth.OAuthToken( 
+            accessToken = oauth.OAuthToken(
                                     accessToken['key'],
-                                    accessToken['secret'] )
+                                    accessToken['secret'])
 
         if not type:
             requestUrl = '/users/%s/rental_history' % (accessToken.key)
@@ -212,10 +212,10 @@ class NetflixUser():
             requestUrl = '/users/%s/rental_history/%s' % (accessToken.key,type)
         
         try:
-            info = simplejson.loads( self.client._getResource( 
+            info = simplejson.loads( self.client._getResource(
                                     requestUrl,
                                     parameters=parameters,
-                                    token=accessToken ) )
+                                    token=accessToken))
         except:
             return {}
             
@@ -260,7 +260,7 @@ class NetflixCatalog():
         if maxResults:
             parameters['max_results'] = maxResults
 
-        info = simplejson.loads( self.client._getResource(
+        info = simplejson.loads(self.client._getResource(
                                     requestUrl,
                                     parameters=parameters))
         print simplejson.dumps(info)
@@ -268,7 +268,7 @@ class NetflixCatalog():
     
     def getTitle(self, url):
         requestUrl = url
-        info = simplejson.loads( self.client._getResource( requestUrl ))
+        info = simplejson.loads(self.client._getResource(requestUrl))
         return info
 
     def searchPeople(self, term,startIndex=None,maxResults=None):
@@ -280,7 +280,7 @@ class NetflixCatalog():
             parameters['max_results'] = maxResults
 
         try:
-            info = simplejson.loads( self.client._getResource( 
+            info = simplejson.loads( self.client._getResource(
                                     requestUrl,
                                     parameters=parameters))
         except:
@@ -291,7 +291,7 @@ class NetflixCatalog():
     def getPerson(self,url):
         requestUrl = url
         try:
-            info = simplejson.loads( self.client._getResource( requestUrl ))
+            info = simplejson.loads(self.client._getResource(requestUrl))
         except:
             return {}
         return info
@@ -302,7 +302,7 @@ class NetflixUserQueue:
         self.client = user.client
         self.tag = None
 
-    def getContents(self, sort=None, startIndex=None, 
+    def getContents(self, sort=None, startIndex=None,
                                     maxResults=None, updatedMin=None):
         parameters={}
         if startIndex:
@@ -316,7 +316,7 @@ class NetflixUserQueue:
         
         requestUrl = '/users/%s/queues' % (self.user.accessToken.key)
         try:
-            info = simplejson.loads(self.client._getResource( 
+            info = simplejson.loads(self.client._getResource(
                                     requestUrl,
                                     parameters=parameters,
                                     token=self.user.accessToken ))
@@ -325,7 +325,7 @@ class NetflixUserQueue:
         else:
             return info
             
-    def getAvailable(self, sort=None, startIndex=None, 
+    def getAvailable(self, sort=None, startIndex=None,
                                     maxResults=None, updatedMin=None,
                                     type='disc'):
         parameters={}
@@ -368,10 +368,10 @@ class NetflixUserQueue:
                                     self.user.accessToken.key,
                                     type)
         try:
-            info = simplejson.loads(self.client._getResource( 
+            info = simplejson.loads(self.client._getResource(
                                     requestUrl,
                                     parameters=parameters,
-                                    token=self.user.accessToken ))
+                                    token=self.user.accessToken))
         except:
             return []
         else:
@@ -384,27 +384,27 @@ class NetflixUserQueue:
             parameters['position'] = position
             
         if not isinstance(accessToken, oauth.OAuthToken):
-            accessToken = oauth.OAuthToken( 
+            accessToken = oauth.OAuthToken(
                                     accessToken['key'],
-                                    accessToken['secret'] )
+                                    accessToken['secret'])
 
         requestUrl = '/users/%s/queues/disc' % (accessToken.key)
         if not urls:
             for disc in discInfo:
-                urls.append( disc['id'] )
-        parameters = { 'title_ref': ','.join(urls) }
+                urls.append(disc['id'])
+        parameters = {'title_ref': ','.join(urls)}
 
         if not self.tag:
-            response = self.client._getResource( 
+            response = self.client._getResource(
                                     requestUrl, 
-                                    token=accessToken )
+                                    token=accessToken)
             response = simplejson.loads(response)
             self.tag = response["queue"]["etag"]
         parameters['etag'] = self.tag
-        response = self.client._postResource( 
-                                    requestUrl, 
+        response = self.client._postResource(
+                                    requestUrl,
                                     token=accessToken,
-                                    parameters=parameters )
+                                    parameters=parameters)
         return response
 
     def removeTitle(self, id, type='disc'):
@@ -414,15 +414,15 @@ class NetflixUserQueue:
         if not isinstance(accessToken, oauth.OAuthToken):
             accessToken = oauth.OAuthToken(
                                     accessToken['key'],
-                                    accessToken['secret'] )
+                                    accessToken['secret'])
 
         # First, we gotta find the entry to delete
         queueparams = {'max_results': 500}
         requestUrl = '/users/%s/queues/disc' % (accessToken.key)
-        response = self.client._getResource( 
+        response = self.client._getResource(
                                     requestUrl,
                                     token=accessToken,
-                                    parameters=queueparams )
+                                    parameters=queueparams)
         print "Response is " + response
         response = simplejson.loads(response)
         titles = response["queue"]["queue_item"]
@@ -434,12 +434,12 @@ class NetflixUserQueue:
 
         if not entryID:
             return
-        firstResponse = self.client._getResource( 
+        firstResponse = self.client._getResource(
                                     entryID,
                                     token=accessToken,
-                                    parameters=parameters )
+                                    parameters=parameters)
         
-        response = self.client._deleteResource( entryID, token=accessToken )
+        response = self.client._deleteResource(entryID, token=accessToken)
         return response
 
 class NetflixPerson:
@@ -475,13 +475,13 @@ class NetflixPerson:
             if link['title'] == field:
                 url = link['href']
         if not url:
-            errorString =          "Invalid or missing field.  " + \
-                                    "Acceptable fields for this object are:\n" + \
-                                    "\n\n".join(fields)
+            errorString = "Invalid or missing field.  " + \
+                          "Acceptable fields for this object are:\n" + \
+                          "\n\n".join(fields)
             print errorString
             sys.exit(1)
         try:
-            info = simplejson.loads(self.client._getResource( url ))
+            info = simplejson.loads(self.client._getResource(url))
         except:
             return []
         else:
@@ -591,13 +591,13 @@ class NetflixDisc:
             if link['title'] == field:
                 url = link['href']
         if not url:
-            errorString =          "Invalid or missing field.  " + \
-                                    "Acceptable fields for this object are:\n" + \
-                                    "\n\n".join(fields)
+            errorString = "Invalid or missing field.  " + \
+                          "Acceptable fields for this object are:\n" + \
+                          "\n\n".join(fields)
             print errorString
             sys.exit(1)
         try:
-            info = simplejson.loads(self.client._getResource( url ))
+            info = simplejson.loads(self.client._getResource(url))
         except:
             return []
         else:
