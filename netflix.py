@@ -1,4 +1,4 @@
-import sys, os.path, re, httplib, time, urllib2, urllib
+import sys, os.path, re, httplib, time, urllib2, gzip, StringIO
 import oauth.oauth as oauth
 from xml.dom.minidom import parseString
 from urlparse import urlparse
@@ -635,50 +635,57 @@ class NetflixClient:
                                     self.signature_method_hmac_sha1,
                                     self.consumer,
                                     token)
-        print oauthRequest.to_url()
-        # self.connection.request('GET', oauthRequest.to_url())
-        # response = self.connection.getresponse()
-        response = urllib2.urlopen(oauthRequest.to_url())
-        return response.read()
-    
+
+        if (self.verbose):
+            print oauthRequest.to_url()
+
+        headers = {'Accept-encoding':'gzip'}
+
+        req = urllib2.Request(oauthRequest.to_url(), None, headers)
+        response = urllib2.urlopen(req)
+        data = gzip.GzipFile(fileobj=StringIO.StringIO(response.read())).read()
+        return data
+
     def _postResource(self, url, token=None, parameters=None):
         if not re.match('http',url):
             url = "http://%s%s" % (HOST, url)
-        
-        oauthRequest = oauth.OAuthRequest.from_consumer_and_token(  
+
+        oauthRequest = oauth.OAuthRequest.from_consumer_and_token(
                                     self.consumer,
                                     http_url=url,
                                     parameters=parameters,
                                     token=token,
                                     http_method='POST')
         oauthRequest.sign_request(
-                                    self.signature_method_hmac_sha1, 
-                                    self.consumer, 
+                                    self.signature_method_hmac_sha1,
+                                    self.consumer,
                                     token)
-        
+
         if (self.verbose):
             print "POSTING TO" + oauthRequest.to_url()
-        
-        headers = {'Content-Type':'application/x-www-form-urlencoded'}
-        self.connection.request('POST', url, 
-                                    body=oauthRequest.to_postdata(), 
-                                    headers=headers)
-        response = self.connection.getresponse()
-        return response.read()
-        
+
+        headers = {'Content-Type':'application/x-www-form-urlencoded',
+                   'Accept-encoding':'gzip'}
+
+        data = oauthRequest.to_postdata()
+        req = urllib2.Request(oauthRequest.to_url(), data, headers)
+        response = urllib2.urlopen(req)
+        data = gzip.GzipFile(fileobj=StringIO.StringIO(response.read())).read()
+        return data
+
     def _deleteResource(self, url, token=None, parameters=None):
         if not re.match('http',url):
             url = "http://%s%s" % (HOST, url)
-        
-        oauthRequest = oauth.OAuthRequest.from_consumer_and_token(  
+
+        oauthRequest = oauth.OAuthRequest.from_consumer_and_token(
                                     self.consumer,
                                     http_url=url,
                                     parameters=parameters,
                                     token=token,
                                     http_method='DELETE')
         oauthRequest.sign_request(
-                                    self.signature_method_hmac_sha1, 
-                                    self.consumer, 
+                                    self.signature_method_hmac_sha1,
+                                    self.consumer,
                                     token)
 
         if (self.verbose):
