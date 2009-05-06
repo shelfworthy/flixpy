@@ -605,7 +605,7 @@ class NetflixDisc:
 
 class NetflixClient:
     def __init__(self, name, key, secret, callback='',verbose=False):
-        self.connection = httplib.HTTPConnection("%s:%s" % (HOST, PORT))
+        self.connection = httplib.HTTPConnection(HOST, PORT)
         self.server = HOST
         self.verbose = verbose
         self.user = None
