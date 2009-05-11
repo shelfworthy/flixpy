@@ -514,7 +514,7 @@ class NetflixTitle:
         return self.info['id'].split('/')[-1]
 
     def type(self):
-        pass
+        return self.id.split('catalog/titles/')[1].split('/')[0]
 
     @property
     def disc_number(self):
