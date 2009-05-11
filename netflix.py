@@ -508,6 +508,9 @@ class NetflixTitle:
 
     @property
     def id(self):
+        return self.info['id']
+
+    def int_id(self):
         return self.info['id'].split('/')[-1]
 
     def type(self):
