@@ -1,4 +1,4 @@
-import sys, os.path, re, httplib, time, urllib2, gzip, StringIO
+import sys, os.path, re, httplib, time, urllib2, gzip, StringIO, logging
 import oauth.oauth as oauth
 from xml.dom.minidom import parseString
 from urlparse import urlparse
@@ -15,10 +15,10 @@ REQUEST_TOKEN_URL = 'http://api.netflix.com/oauth/request_token'
 ACCESS_TOKEN_URL  = 'http://api.netflix.com/oauth/access_token'
 AUTHORIZATION_URL = 'https://api-user.netflix.com/oauth/login'
 
+log = logging.getLogger('py_netflix')
 
 class NetflixError(Exception):
     pass
-
 
 class NetflixUser():
     def __init__(self, user, client):
@@ -140,11 +140,11 @@ class NetflixUser():
                     url = link['href']
                     
         if not url:
-            errorString =           "Invalid or missing field.  " + \
-                                    "Acceptable fields for this object are:"+ \
-                                    "\n\n".join(fields)
-            print errorString
-            sys.exit(1)
+            errorString = "Invalid or missing field.  " + \
+                          "Acceptable fields for this object are:"+ \
+                          "\n\n".join(fields)
+            log.debug(errorString)
+            return None
         try:
             info = simplejson.loads(self.client._getResource(
                                     url,token=accessToken ))
@@ -492,8 +492,8 @@ class NetflixPerson:
             errorString = "Invalid or missing field.  " + \
                           "Acceptable fields for this object are:\n" + \
                           "\n\n".join(fields)
-            print errorString
-            sys.exit(1)
+            log.debug(errorString)
+            return None
         try:
             info = simplejson.loads(self.client._getResource(url))
         except:
@@ -510,20 +510,13 @@ class NetflixTitle:
     def id(self):
         return self.info['id']
 
+    @property
     def int_id(self):
         return self.info['id'].split('/')[-1]
 
+    @property
     def type(self):
         return self.id.split('catalog/titles/')[1].split('/')[0]
-
-    @property
-    def disc_number(self):
-        raw_title = self.info['title']['regular']
-        try:
-            result = re.search(': Disc \d+$',raw_title)
-            return int(result.group().strip(': Disc'))
-        except AttributeError:
-            return False
 
     @property
     def title(self):
@@ -601,14 +594,25 @@ class NetflixTitle:
             return None
 
     @property
+    def bonus_material(self):
+        raw_bonus = self.getInfo('bonus materials')
+        if raw_bonus:
+            return [self.client.catalog.title(title['href']) for title in raw_bonus['bonus_materials']['link']]
+        else:
+            return []
+
+    @property
     def similar_titles(self):
         raw_sim = self.getInfo('similars')
-        raw_sim = raw_sim['similars']['similars_item']
+        if raw_sim:
+            raw_sim = raw_sim['similars']['similars_item']
 
-        if isinstance(raw_sim, list):
-            return [NetflixTitle(title,self.client) for title in raw_sim]
+            if isinstance(raw_sim, list):
+                return [NetflixTitle(title,self.client) for title in raw_sim]
+            else:
+                return NetflixTitle(raw_sim, self.client)
         else:
-            return NetflixTitle(raw_sim, self.client)
+            return []
 
     def getInfo(self,field):
         fields = []
@@ -621,8 +625,7 @@ class NetflixTitle:
             errorString = "Invalid or missing field.  " + \
                           "Acceptable fields for this object are:\n" + \
                           "\n\n".join(fields)
-            print errorString
-            sys.exit(1)
+            
         try:
             info = simplejson.loads(self.client._getResource(url))
         except:
