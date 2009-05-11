@@ -579,10 +579,7 @@ class NetflixTitle:
         raw_cast = self.getInfo('cast')
         raw_cast = raw_cast['people']['person']
         if isinstance(raw_cast, list):
-            people = []
-            for person in raw_cast:
-                people.append(NetflixPerson(person, self.client))
-            return people
+            return [NetflixPerson(person, self.client) for person in raw_cast]
         else:
             return NetflixPerson(raw_cast, self.client)
 
@@ -599,6 +596,16 @@ class NetflixTitle:
             return datetime.fromtimestamp(float(self.info['shipped_date']))
         except KeyError:
             return None
+
+    @property
+    def similar_titles(self):
+        raw_sim = self.getInfo('similars')
+        raw_sim = raw_sim['similars']['similars_item']
+
+        if isinstance(raw_sim, list):
+            return [NetflixTitle(title,self.client) for title in raw_sim]
+        else:
+            return NetflixTitle(raw_sim, self.client)
 
     def getInfo(self,field):
         fields = []
