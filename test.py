@@ -83,7 +83,7 @@ class TestQuery():
 		formats = disc.getInfo('formats')
 		assert isinstance(formats,dict)
 		synopsis = disc.getInfo('synopsis')
-		assert isinstance(synopsis,dict)	  
+		assert isinstance(synopsis,dict)
 				
 	def test_user_functions(self):
 		netflixClient = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK)

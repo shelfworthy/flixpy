@@ -4,11 +4,9 @@ pyflix readme
 This is a branch of [pyflix] (http://code.google.com/p/pyflix/) that's goal is to make the python API easer to work with.
 The goal is to take pure json output and instead output formats that make sense with the data that is being requested.
 
-*This is a work in progress.* Currently the User, Disk, and Person objects have gotten the most work, along with the at_home queue.
-The example currently only shows how to work with the code in the old way at the moment (which should continue to work).
-I hope to have time to update it soon.
+*This is a work in progress.* Currently the User, Title, and Person objects have gotten the most work, along with the at_home queue.
 
-for now here are some examples of how my interface works once you have an authenticated user (you can authenticate, for now, using the existing example.py)
+for now here are some examples of how my interface works once you have an authenticated user.
 
 bugs
 ----
@@ -121,22 +119,3 @@ example usage
     5
 
     ### thats all for now!
-
-Old Readme from pyflix on google code
--------------------------------------
-
-Basic readme for the pyflix module.
-
-In order to use the system, you need to get a developer key/secret from the Netflix developer site.  You will need those for all requests to Netflix.
-
-To help you get a better understanding of how this works, here's a step by step tutorial.
-
-1) Get a developer API key and secret
-2) Put those values in the example.py script
-3) Run the example.py script.  In this configuration it will perform all of the actions it can do without an authenticated user.
-4) Run the example.py script with the "-a" flag.  Since you don't already have user keys, it will start the process of retrieving them.
-5) Visit the website listed, and insert the request values into the example.py script under EXAMPLE_USER['request']
-6) Run the example.py script again with the "-a" flag.  This will generate the access values.  Insert those into the script under EXAMPLE_USER['access']
-7) At this point you can do any of the actions with example.py -a
-
-In your own coding you may want to run these steps differently, or more silently.  You can retain the configuration within your application.  The example is somewhat clunky but should help you understand what can be done with the various levels of authentication.
