@@ -86,7 +86,7 @@ def getTitleInfo(netflix,movie):
     # which include formats, synopsis, etc.
     ######################################  
     print "*** Let's grab the format for this movie ***"
-    disc = NetflixDisc(movie['catalog_title'],netflix)
+    disc = NetflixTitle(movie['catalog_title'],netflix)
     formats = disc.getInfo('formats')
     print "Formats: %s" % simplejson.dumps(formats,indent=4)
 

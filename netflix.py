@@ -56,10 +56,10 @@ class NetflixUser():
         if isinstance(self.getInfo('at home')['at_home']['at_home_item'], list):
             movies = []
             for raw_movie in self.getInfo('at home')['at_home']['at_home_item']:
-                movies.append(NetflixDisc(raw_movie,self.client))
+                movies.append(NetflixTitle(raw_movie,self.client))
             return movies
         else:
-            return [NetflixDisc(self.getInfo('at home')['at_home']['at_home_item'],self.client)]
+            return [NetflixTitle(self.getInfo('at home')['at_home']['at_home_item'],self.client)]
 
     def getRequestToken(self):
         client = self.client
@@ -226,33 +226,18 @@ class NetflixCatalog():
     def __init__(self,client):
         self.client = client
 
-    def searchTitles(self, term,startIndex=None,maxResults=None):
-        requestUrl = '/catalog/titles'
-        parameters = {'term': term}
-        if startIndex:
-            parameters['start_index'] = startIndex
-        if maxResults:
-            parameters['max_results'] = maxResults
-        info = simplejson.loads( self.client._getResource(
-                                    requestUrl,
-                                    parameters=parameters))
-
-        return info['catalog_titles']['catalog_title']
-
     @property
     def index(self):
         requestUrl = '/catalog/titles/index'
 
-        info = self.client._getResource(
-                                    requestUrl,
-                                    self.client.user.accessToken,
-                                    {},
-                                    True
-                                    )
+        return self.client._getResource(
+            requestUrl,
+            self.client.user.accessToken,
+            {},
+            True
+        )
 
-        return info
-
-    def searchStringTitles(self, term,startIndex=None,maxResults=None):
+    def autocomplete(self, term,startIndex=None,maxResults=None):
         requestUrl = '/catalog/titles/autocomplete'
         parameters = {'term': term}
         if startIndex:
@@ -260,18 +245,37 @@ class NetflixCatalog():
         if maxResults:
             parameters['max_results'] = maxResults
 
-        info = simplejson.loads(self.client._getResource(
-                                    requestUrl,
-                                    parameters=parameters))
-        print simplejson.dumps(info)
-        return info['autocomplete']['autocomplete_item']
-    
-    def getTitle(self, url):
-        requestUrl = url
-        info = simplejson.loads(self.client._getResource(requestUrl))
-        return info
+        try:
+            info = simplejson.loads(
+                self.client._getResource(
+                    requestUrl,
+                    parameters=parameters
+                )
+            )
+            return [x['title']['short'] for x in info['autocomplete']['autocomplete_item']]
+        except KeyError:
+            return []
 
-    def searchPeople(self, term,startIndex=None,maxResults=None):
+    def search_titles(self, term,startIndex=None,maxResults=None):
+        requestUrl = '/catalog/titles'
+        parameters = {'term': term}
+        if startIndex:
+            parameters['start_index'] = startIndex
+        if maxResults:
+            parameters['max_results'] = maxResults
+
+        try:
+            info = simplejson.loads(
+                self.client._getResource(
+                    requestUrl,
+                    parameters=parameters
+                )
+            )
+            return [NetflixTitle(title,self.client) for title in info['catalog_titles']['catalog_title']]
+        except KeyError:
+            return []
+
+    def search_people(self, term,startIndex=None,maxResults=None):
         requestUrl = '/catalog/people'
         parameters = {'term': term}
         if startIndex:
@@ -280,21 +284,31 @@ class NetflixCatalog():
             parameters['max_results'] = maxResults
 
         try:
-            info = simplejson.loads( self.client._getResource(
-                                    requestUrl,
-                                    parameters=parameters))
-        except:
+            info = simplejson.loads(
+                self.client._getResource(
+                    requestUrl,
+                    parameters=parameters
+                )
+            )
+            return [NetflixPerson(person,self.client) for person in info['people']['person']]
+        except KeyError:
             return []
 
-        return info['people']['person']
-
-    def getPerson(self,url):
+    def title(self, url):
         requestUrl = url
         try:
             info = simplejson.loads(self.client._getResource(requestUrl))
-        except:
-            return {}
-        return info
+            return NetflixTitle(info['catalog_title'],self.client)
+        except urllib2.HTTPError:
+            return None
+
+    def person(self,url):
+        requestUrl = url
+        try:
+            info = simplejson.loads(self.client._getResource(requestUrl))
+            return NetflixPerson(info['person'],self.client)
+        except urllib2.HTTPError:
+            return None
 
 class NetflixUserQueue:
     def __init__(self,user):
@@ -462,10 +476,10 @@ class NetflixPerson:
         if isinstance(raw_films, list):
             films = []
             for film in raw_films:
-                films.append(NetflixDisc(film,self.client))
+                films.append(NetflixTitle(film,self.client))
             return films
         else:
-            return NetflixDisc(raw_films,self.client)
+            return NetflixTitle(raw_films,self.client)
 
     def getInfo(self,field):
         fields = []
@@ -487,7 +501,7 @@ class NetflixPerson:
         else:
             return info
 
-class NetflixDisc:
+class NetflixTitle:
     def __init__(self,discInfo,client):
         self.info = discInfo
         self.client = client
@@ -495,6 +509,9 @@ class NetflixDisc:
     @property
     def id(self):
         return self.info['id'].split('/')[-1]
+
+    def type(self):
+        pass
 
     @property
     def disc_number(self):

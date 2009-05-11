@@ -79,7 +79,7 @@ class TestQuery():
 		netflixClient = NetflixClient(APP_NAME, API_KEY, API_SECRET, CALLBACK)
 		data = netflixClient.catalog.searchTitles('Cocoon',1,2)
 		testSubject = data[0]
-		disc = NetflixDisc(testSubject,netflixClient)
+		disc = NetflixTitle(testSubject,netflixClient)
 		formats = disc.getInfo('formats')
 		assert isinstance(formats,dict)
 		synopsis = disc.getInfo('synopsis')
