@@ -56,10 +56,7 @@ class NetflixUser():
     @property
     def at_home(self):
         if isinstance(self.getInfo('at home')['at_home']['at_home_item'], list):
-            movies = []
-            for raw_movie in self.getInfo('at home')['at_home']['at_home_item']:
-                movies.append(NetflixTitle(raw_movie,self.client))
-            return movies
+            return [NetflixTitle(title,self.client) for title in self.getInfo('at home')['at_home']['at_home_item']]
         else:
             return [NetflixTitle(self.getInfo('at home')['at_home']['at_home_item'],self.client)]
 
@@ -120,7 +117,7 @@ class NetflixUser():
         return oauth.OAuthToken.from_string(response.read())
     
     def getData(self):
-        requestUrl = '/users/%s' % (accessToken.key)
+        requestUrl = '/users/%s' % (self.accessToken.key)
 
         info = simplejson.loads(
             self.client._getResource(
@@ -129,7 +126,8 @@ class NetflixUser():
             )
         )
 
-        return info['user']
+        self.data = info['user']
+        return self.data
 
     def getInfo(self, field):
         accessToken=self.accessToken
@@ -156,6 +154,8 @@ class NetflixUser():
             return []
 
     def getQueue(self):
+        # finish up member / queue interaction
+        pass
 
     ### I haven't cleaned up user stuff below this line. ###
 
@@ -619,7 +619,7 @@ class NetflixTitle:
 
         try:
             return simplejson.loads(
-                simplejson.loads(self.client._getResource(
+                self.client._getResource(
                     url=user.getInfo('title states')['title_states']['url_template'].split('?')[0],
                     token=user.accessToken,
                     parameters={'title_refs':self.id}
