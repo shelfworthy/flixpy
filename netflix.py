@@ -520,8 +520,29 @@ class NetflixTitle:
     @property
     def title(self):
         raw_title = self.info['title']['regular']
-        title = re.split(': Disc \d+$',raw_title)[0]
+        title = re.split(':? ?([Vv]ol.? \d+|[dD]isc \d+):? ?',raw_title)[0]
         return title
+
+    @property
+    def disc_title(self):
+        try:
+            raw_title = self.info['title']['regular']
+            title = re.split(':? ?([Vv]ol.? \d+|[dD]isc \d+):? ?',raw_title)[-1]
+            if len(title) > 2:
+                return title
+            else:
+                return None
+        except:
+            return None
+
+    @property
+    def disc_number(self):
+        raw_title = self.info['title']['regular']
+        try:
+            result = re.search(':? ?([Vv]ol.? \d+|[dD]isc \d+):? ?',raw_title)
+            return int(re.search('\d+',result.group()).group())
+        except AttributeError:
+            return False
 
     @property
     def length(self):
