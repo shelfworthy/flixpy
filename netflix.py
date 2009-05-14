@@ -497,7 +497,7 @@ class NetflixTitle(NetflixBase):
     @property
     def id(self):
         try:
-            return self.getInfoLink['http://schemas.netflix.com/catalog/title']
+            return self.getInfoLink('http://schemas.netflix.com/catalog/title')
         except:
             return self.info['id']
 
