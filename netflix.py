@@ -15,6 +15,18 @@ REQUEST_TOKEN_URL = 'http://api.netflix.com/oauth/request_token'
 ACCESS_TOKEN_URL  = 'http://api.netflix.com/oauth/access_token'
 AUTHORIZATION_URL = 'https://api-user.netflix.com/oauth/login'
 
+TITLE_URL = 'http://schemas.netflix.com/catalog/title'
+
+# parent URLS
+SERIES_URL = 'http://schemas.netflix.com/catalog/titles.series'
+SEASON_URL = 'http://schemas.netflix.com/catalog/title.season'
+DISC_URL = 'http://schemas.netflix.com/catalog/title.disc'
+
+# children URLs
+SEASONS_URL = 'http://schemas.netflix.com/catalog/titles.seasons'
+DISCS_URL = 'http://schemas.netflix.com/catalog/titles.discs'
+EPISODES_URL = 'http://schemas.netflix.com/catalog/titles.programs'
+
 log = logging.getLogger('py_netflix')
 
 class NetflixError(Exception):
@@ -119,6 +131,7 @@ class NetflixBase(object):
         self.client = client
 
     def getInfo(self,field):
+        print "getting info"
         # try and get a token from the clients user object (if it exists)
         try:
             token = self.client.user.accessToken
@@ -496,10 +509,7 @@ class NetflixTitle(NetflixBase):
 
     @property
     def id(self):
-        try:
-            return self.getInfoLink('http://schemas.netflix.com/catalog/title')
-        except:
-            return self.info['id']
+        return self.getInfoLink(TITLE_URL) or self.info['id']
 
     @property
     def int_id(self):
@@ -507,7 +517,53 @@ class NetflixTitle(NetflixBase):
 
     @property
     def type(self):
-        return self.id.split('catalog/titles/')[1].split('/')[0]
+        raw = self.id.split('/')[-2]
+        if raw != 'series':
+            # remove the 's' from the end of everything but series
+            return self.id.split('/')[-2][0:-1]
+        else:
+            return raw
+
+    # helper functions for parent and child functions
+
+    def _get_title_single(self, url):
+        return NetflixTitle(self.getInfo(url)['catalog_title'],self.client)
+
+    def _get_title_list(self, url):
+        try:
+            return [NetflixTitle(title,self.client) for title in self.getInfo(url)['catalog_titles']['catalog_title']]
+        except TypeError:
+            return []
+
+    # These functions get the items parents, if they exist
+
+    @property
+    def disc(self):
+        return self._get_title_single(DISC_URL)
+
+    @property
+    def season(self):
+        return self._get_title_single(SEASON_URL)
+
+    @property
+    def season(self):
+        return self._get_title_single(SERIES_URL)
+
+    # These functions get the items children, if they exist
+
+    @property
+    def seasons(self):
+        return self._get_title_list(SEASONS_URL)
+
+    @property
+    def discs(self):
+        return self._get_title_list(DISCS_URL)
+
+    @property
+    def episodes(self):
+        return self._get_title_list(EPISODES_URL)
+
+    # These functions deal with the current items details
 
     @property
     def title(self):
