@@ -63,7 +63,7 @@ example usage
     
     ### what discs they currently have at home:
     
-    >> movie = netflix.user.at_home[1]
+    >> movie = netflix.user.at_home()[1]
     
     ### information about a movie:
     
@@ -76,7 +76,7 @@ example usage
     >> movie.mpaa_rating
     u'PG-13'
     
-    >> movie.formats
+    >> movie.formats()
     [{'format': u'DVD', 'release_date': datetime.datetime(2008, 4, 21, 19, 0)},
     {'format': u'Blu-ray', 'release_date': datetime.datetime(2008, 6, 2, 19, 0)}]
     
@@ -85,20 +85,20 @@ example usage
     
     ### information about a person (in this case the director):
     
-    >> movie.directors[0].name
+    >> movie.directors()[0].name
     u'Matt Reeves'
     
     ### information about a person's filmography:
     
-    >> movie.directors[0].filmography[0].title
+    >> movie.directors()[0].filmography()[0].title
     u'Cloverfield'
     
-    >> movie.directors[0].filmography[0].title
+    >> movie.directors()[0].filmography()[0].title
     u'28 Weeks Later'
     
     ### information about a movies cast:
     
-    >> movie.cast[0]
+    >> movie.cast()[0].name
     u'Mike Vogel'
     
     ### see if the movie is part of a set (this one is not):
@@ -108,7 +108,7 @@ example usage
     
     ### lets find one that is:
     
-    >> movie = netflix.user.at_home[2]
+    >> movie = netflix.user.at_home()[2]
     
     >> movie.title
     u'Gilmore Girls: Season 5'

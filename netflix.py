@@ -27,6 +27,8 @@ SEASONS_URL = 'http://schemas.netflix.com/catalog/titles.seasons'
 DISCS_URL = 'http://schemas.netflix.com/catalog/titles.discs'
 EPISODES_URL = 'http://schemas.netflix.com/catalog/titles.programs'
 
+disk_pattern = re.compile(':? ?([Vv]ol.? \d+|[dD]isc \d+):? ?')
+
 log = logging.getLogger('py_netflix')
 
 class NetflixError(Exception):
@@ -204,7 +206,6 @@ class NetflixUser(NetflixBase):
     def can_instant_watch(self):
         return self.info['can_instant_watch'] == 'true'
 
-    @property
     def at_home(self):
         if isinstance(self.getInfo('at home')['at_home']['at_home_item'], list):
             return [NetflixTitle(title,self.client) for title in self.getInfo('at home')['at_home']['at_home_item']]
@@ -492,7 +493,6 @@ class NetflixPerson(NetflixBase):
     def name(self):
         return self.info['name']
 
-    @property
     def filmography(self):
         raw_films = self.getInfo('filmography')['filmography']['filmography_item']
 
@@ -505,6 +505,43 @@ class NetflixPerson(NetflixBase):
             return NetflixTitle(raw_films,self.client)
 
 class NetflixTitle(NetflixBase):
+    # helper functions for parent and child functions
+
+    def _get_title_single(self, url):
+        return NetflixTitle(self.getInfo(url)['catalog_title'],self.client)
+
+    def _get_title_list(self, url):
+        try:
+            return [NetflixTitle(title,self.client) for title in self.getInfo(url)['catalog_titles']['catalog_title']]
+        except TypeError:
+            return []
+
+    # These functions get the items parents, if they exist
+
+    def disc(self):
+        return self._get_title_single(DISC_URL)
+
+    def season(self):
+        return self._get_title_single(SEASON_URL)
+
+    def series(self):
+        return self._get_title_single(SERIES_URL)
+
+    # These functions get the items children, if they exist
+
+    def seasons(self):
+        return self._get_title_list(SEASONS_URL)
+
+    def discs(self):
+        return self._get_title_list(DISCS_URL)
+
+    def episodes(self):
+        return self._get_title_list(EPISODES_URL)
+
+    # These functions deal with the current items details
+
+    def __repr__(self):
+        return self.title
 
     @property
     def id(self):
@@ -523,73 +560,72 @@ class NetflixTitle(NetflixBase):
         else:
             return raw
 
-    # helper functions for parent and child functions
-
-    def _get_title_single(self, url):
-        return NetflixTitle(self.getInfo(url)['catalog_title'],self.client)
-
-    def _get_title_list(self, url):
-        try:
-            return [NetflixTitle(title,self.client) for title in self.getInfo(url)['catalog_titles']['catalog_title']]
-        except TypeError:
-            return []
-
-    # These functions get the items parents, if they exist
-
-    @property
-    def disc(self):
-        return self._get_title_single(DISC_URL)
-
-    @property
-    def season(self):
-        return self._get_title_single(SEASON_URL)
-
-    @property
-    def season(self):
-        return self._get_title_single(SERIES_URL)
-
-    # These functions get the items children, if they exist
-
-    @property
-    def seasons(self):
-        return self._get_title_list(SEASONS_URL)
-
-    @property
-    def discs(self):
-        return self._get_title_list(DISCS_URL)
-
-    @property
-    def episodes(self):
-        return self._get_title_list(EPISODES_URL)
-
-    # These functions deal with the current items details
-
     @property
     def title(self):
-        raw_title = self.info['title']['regular']
-        title = re.split(':? ?([Vv]ol.? \d+|[dD]isc \d+):? ?',raw_title)[0]
-        return title
+        return self.info['title']['regular']
+
+    @property
+    def series_title(self):
+        if self.type == 'series':
+            return self.title
+        elif self.type != 'movie':
+            return self.series().title
+        return None
+
+    @property
+    def season_number(self):
+        try:
+            i = 1
+            for season in self.series().seasons():
+                if self.id == season.id:
+                    return i
+                else:
+                    i += 1
+        except TypeError:
+            return None
+
+    @property
+    def episode_title(self):
+        try:
+            return self.info['title']['episode_short']
+        except KeyError:
+            return None
+
+    @property
+    def episode_number(self):
+        try:
+            i = 1
+            for episode in self.season().episodes():
+                if self.id == episode.id:
+                    return i
+                else:
+                    i += 1
+        except TypeError:
+            return None
 
     @property
     def disc_title(self):
         try:
             raw_title = self.info['title']['regular']
-            title = re.split(':? ?([Vv]ol.? \d+|[dD]isc \d+):? ?',raw_title)[-1]
-            if len(title) > 2:
-                return title
-            else:
-                return None
+            if re.search(disk_pattern,raw_title):
+                title = re.split(disk_pattern,raw_title)[-1]
+                if len(title) > 2:
+                    return title
+            return None
         except:
             return None
 
     @property
     def disc_number(self):
-        raw_title = self.info['title']['regular']
         try:
-            result = re.search(':? ?([Vv]ol.? \d+|[dD]isc \d+):? ?',raw_title)
-            return int(re.search('\d+',result.group()).group())
-        except AttributeError:
-            return False
+            i = 1
+            for disc in self.season().discs():
+                if self.id == disc.id:
+                    return i
+                else:
+                    i += 1
+        except TypeError:
+            return None
 
     @property
     def length(self):
@@ -611,6 +647,21 @@ class NetflixTitle(NetflixBase):
         return None
 
     @property
+    def release_year(self):
+        try:
+            return self.info['release_year']
+        except KeyError:
+            return None
+
+    @property
+    def shipped_date(self):
+        try:
+            return datetime.fromtimestamp(float(self.info['shipped_date']))
+        except KeyError:
+            return None
+
+    # deeper info about an item (requires more queries of the netflix api)
+
     def formats(self):
         raw_formats = self.getInfo('formats')['delivery_formats']['availability']
         if isinstance(raw_formats, list):
@@ -625,7 +676,6 @@ class NetflixTitle(NetflixBase):
             release_date = datetime.fromtimestamp(float(raw_formats['available_from']))
             return [{'format':format_name, 'release_date': release_date}]
 
-    @property
     def directors(self):
         raw_directors = self.getInfo('directors')
         raw_directors = raw_directors['people']['person']
@@ -637,7 +687,6 @@ class NetflixTitle(NetflixBase):
         else:
             return NetflixPerson(raw_directors, self.client)
 
-    @property
     def cast(self):
         raw_cast = self.getInfo('cast')
         raw_cast = raw_cast['people']['person']
@@ -646,21 +695,6 @@ class NetflixTitle(NetflixBase):
         else:
             return NetflixPerson(raw_cast, self.client)
 
-    @property
-    def release_year(self):
-        try:
-            return self.info['release_year']
-        except KeyError:
-            return None
-
-    @property
-    def shipped_date(self):
-        try:
-            return datetime.fromtimestamp(float(self.info['shipped_date']))
-        except KeyError:
-            return None
-
-    @property
     def bonus_material(self):
         raw_bonus = self.getInfo('bonus materials')
         if raw_bonus:
@@ -668,7 +702,6 @@ class NetflixTitle(NetflixBase):
         else:
             return []
 
-    @property
     def similar_titles(self):
         raw_sim = self.getInfo('similars')
         if raw_sim:
@@ -681,7 +714,6 @@ class NetflixTitle(NetflixBase):
         else:
             return []
 
-    @property
     def user_state(self):
         user = self.client.user
 
@@ -700,7 +732,6 @@ class NetflixCatalog():
     def __init__(self,client):
         self.client = client
 
-    @property
     def index(self):
         requestUrl = '/catalog/titles/index'
 
