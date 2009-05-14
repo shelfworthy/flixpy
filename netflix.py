@@ -131,7 +131,6 @@ class NetflixBase(object):
         self.client = client
 
     def getInfo(self,field):
-        print "getting info"
         # try and get a token from the clients user object (if it exists)
         try:
             token = self.client.user.accessToken
