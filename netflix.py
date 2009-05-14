@@ -20,38 +20,177 @@ log = logging.getLogger('py_netflix')
 class NetflixError(Exception):
     pass
 
-class NetflixUser():
-    def __init__(self, user, client):
+class NetflixClient:
+    def __init__(self, name, key, secret, callback='',verbose=False):
+        self.connection = httplib.HTTPConnection(HOST, PORT)
+        self.server = HOST
+        self.verbose = verbose
+        self.user = None
+        self.catalog = NetflixCatalog(self)
+        
+        self.CONSUMER_NAME=name
+        self.CONSUMER_KEY=key
+        self.CONSUMER_SECRET=secret
+        self.CONSUMER_CALLBACK=callback
+        self.consumer = oauth.OAuthConsumer(
+                                    self.CONSUMER_KEY,
+                                    self.CONSUMER_SECRET)
+        self.signature_method_hmac_sha1 = \
+                                    oauth.OAuthSignatureMethod_HMAC_SHA1()
+
+    def _getResource(self, url, token=None, parameters={}, xml=False):
+        if not re.match('http',url):
+            url = "http://%s%s" % (HOST, url)
+        if not xml:
+            parameters['output'] = 'json'
+        oauthRequest = oauth.OAuthRequest.from_consumer_and_token(
+                                    self.consumer,
+                                    http_url=url,
+                                    parameters=parameters,
+                                    token=token)
+        oauthRequest.sign_request(  
+                                    self.signature_method_hmac_sha1,
+                                    self.consumer,
+                                    token)
+
+        if (self.verbose):
+            print oauthRequest.to_url()
+
+        headers = {'Accept-encoding':'gzip'}
+
+        req = urllib2.Request(oauthRequest.to_url(), None, headers)
+        response = urllib2.urlopen(req)
+        data = gzip.GzipFile(fileobj=StringIO.StringIO(response.read())).read()
+        return data
+
+    def _postResource(self, url, token=None, parameters=None):
+        if not re.match('http',url):
+            url = "http://%s%s" % (HOST, url)
+
+        oauthRequest = oauth.OAuthRequest.from_consumer_and_token(
+                                    self.consumer,
+                                    http_url=url,
+                                    parameters=parameters,
+                                    token=token,
+                                    http_method='POST')
+        oauthRequest.sign_request(
+                                    self.signature_method_hmac_sha1,
+                                    self.consumer,
+                                    token)
+
+        if (self.verbose):
+            print "POSTING TO" + oauthRequest.to_url()
+
+        headers = {'Content-Type':'application/x-www-form-urlencoded',
+                   'Accept-encoding':'gzip'}
+
+        data = oauthRequest.to_postdata()
+        req = urllib2.Request(oauthRequest.to_url(), data, headers)
+        response = urllib2.urlopen(req)
+        data = gzip.GzipFile(fileobj=StringIO.StringIO(response.read())).read()
+        return data
+
+    def _deleteResource(self, url, token=None, parameters=None):
+        if not re.match('http',url):
+            url = "http://%s%s" % (HOST, url)
+
+        oauthRequest = oauth.OAuthRequest.from_consumer_and_token(
+                                    self.consumer,
+                                    http_url=url,
+                                    parameters=parameters,
+                                    token=token,
+                                    http_method='DELETE')
+        oauthRequest.sign_request(
+                                    self.signature_method_hmac_sha1,
+                                    self.consumer,
+                                    token)
+
+        if (self.verbose):
+            print "DELETING FROM" + oauthRequest.to_url()
+
+        self.connection.request('DELETE', oauthRequest.to_url())
+        response = self.connection.getresponse()
+        return response.read()
+
+class NetflixBase(object):
+    ''' This is the base netflix object class that User, Title, and Person are currently built on'''
+    def __init__(self, raw_json, client):
+        self.info = raw_json
+        self.client = client
+
+    def getInfo(self,field):
+        # try and get a token from the clients user object (if it exists)
+        try:
+            token = self.client.user.accessToken
+        except AttributeError:
+            token = None
+
+        fields = []
+        url = ''
+        for link in self.info['link']:
+            fields.append('title: %s | rel: %s' % (link['title'], link['rel']))
+            if link['title'] == field or link['rel'] == field:
+                url = link['href']
+        if not url:
+            errorString = "Invalid or missing field.  " + \
+                          "Acceptable fields for this object are:\n" + \
+                          "\n\n".join(fields)
+            log.debug(errorString)
+            return None
+        try:
+            return simplejson.loads(self.client._getResource(url, token))
+        except:
+            return []
+
+    def getInfoLink(self,field):
+        for link in self.info['link']:
+            if link['title'] == field or link['rel'] == field:
+                return link['href']
+        return None
+
+class NetflixUser(NetflixBase):
+    def __init__(self, user_auth_dict, client):
         self.requestTokenUrl = REQUEST_TOKEN_URL
         self.accessTokenUrl  = ACCESS_TOKEN_URL
         self.authorizationUrl = AUTHORIZATION_URL
+
         self.accessToken = oauth.OAuthToken(
-            user['access']['key'],
-            user['access']['secret']
+            user_auth_dict['access']['key'],
+            user_auth_dict['access']['secret']
         )
-        self.client = client
-        self.data = None
+
+        # get the actual user data
+        requestUrl = '/users/%s' % (self.accessToken.key)
+
+        raw_json = simplejson.loads(
+            client._getResource(
+                requestUrl,
+                token=self.accessToken
+            )
+        )
+
+        super(NetflixUser, self).__init__(raw_json['user'], client)
 
     @property
     def name(self):
-        first = self.getData()['first_name']
-        last = self.getData()['last_name']
+        first = self.info['first_name']
+        last = self.info['last_name']
 
         return "%s %s" % (first, last)
 
     @property
     def preferred_formats(self):
-        if isinstance(self.getData()['preferred_formats']['category'], list):
+        if isinstance(self.info['preferred_formats']['category'], list):
             formats = []
-            for format in self.getData()['preferred_formats']['category']:
+            for format in self.info['preferred_formats']['category']:
                 formats.append(format['term'])
             return formats
         else:
-            return [self.getData()['preferred_formats']['category']['term']]
+            return [self.info['preferred_formats']['category']['term']]
 
     @property
     def can_instant_watch(self):
-        return self.getData()['can_instant_watch'] == 'true'
+        return self.info['can_instant_watch'] == 'true'
 
     @property
     def at_home(self):
@@ -59,6 +198,10 @@ class NetflixUser():
             return [NetflixTitle(title,self.client) for title in self.getInfo('at home')['at_home']['at_home_item']]
         else:
             return [NetflixTitle(self.getInfo('at home')['at_home']['at_home_item'],self.client)]
+
+    def getQueue(self):
+        # finish up member / queue interaction
+        pass
 
     def getRequestToken(self):
         client = self.client
@@ -115,47 +258,6 @@ class NetflixUser():
         response = client.connection.getresponse()
 
         return oauth.OAuthToken.from_string(response.read())
-    
-    def getData(self):
-        requestUrl = '/users/%s' % (self.accessToken.key)
-
-        info = simplejson.loads(
-            self.client._getResource(
-                requestUrl,
-                token=self.accessToken
-            )
-        )
-
-        self.data = info['user']
-        return self.data
-
-    def getInfo(self, field):
-        accessToken=self.accessToken
-        
-        if not self.data:
-            self.getData()
-            
-        fields = []
-        url = ''
-        for link in self.data['link']:
-                fields.append(link['title'])
-                if link['title'] == field:
-                    url = link['href']
-
-        if not url:
-            errorString = "Invalid or missing field.  " + \
-                          "Acceptable fields for this object are:"+ \
-                          "\n\n".join(fields)
-            log.debug(errorString)
-            return None
-        try:
-            return simplejson.loads(self.client._getResource(url, token=accessToken))
-        except:
-            return []
-
-    def getQueue(self):
-        # finish up member / queue interaction
-        pass
 
     ### I haven't cleaned up user stuff below this line. ###
 
@@ -221,95 +323,6 @@ class NetflixUser():
             return {}
             
         return info
-        
-
-class NetflixCatalog():
-    def __init__(self,client):
-        self.client = client
-
-    @property
-    def index(self):
-        requestUrl = '/catalog/titles/index'
-
-        return self.client._getResource(
-            requestUrl,
-            self.client.user.accessToken,
-            {},
-            True
-        )
-
-    def autocomplete(self, term,startIndex=None,maxResults=None):
-        requestUrl = '/catalog/titles/autocomplete'
-        parameters = {'term': term}
-        if startIndex:
-            parameters['start_index'] = startIndex
-        if maxResults:
-            parameters['max_results'] = maxResults
-
-        try:
-            info = simplejson.loads(
-                self.client._getResource(
-                    requestUrl,
-                    parameters=parameters
-                )
-            )
-            return [x['title']['short'] for x in info['autocomplete']['autocomplete_item']]
-        except KeyError:
-            return []
-
-    def search_titles(self, term,startIndex=None,maxResults=None):
-        requestUrl = '/catalog/titles'
-        parameters = {'term': term}
-        if startIndex:
-            parameters['start_index'] = startIndex
-        if maxResults:
-            parameters['max_results'] = maxResults
-
-        try:
-            info = simplejson.loads(
-                self.client._getResource(
-                    requestUrl,
-                    parameters=parameters
-                )
-            )
-            return [NetflixTitle(title,self.client) for title in info['catalog_titles']['catalog_title']]
-        except KeyError:
-            return []
-
-    def search_people(self, term,startIndex=None,maxResults=None):
-        requestUrl = '/catalog/people'
-        parameters = {'term': term}
-        if startIndex:
-            parameters['start_index'] = startIndex
-        if maxResults:
-            parameters['max_results'] = maxResults
-
-        try:
-            info = simplejson.loads(
-                self.client._getResource(
-                    requestUrl,
-                    parameters=parameters
-                )
-            )
-            return [NetflixPerson(person,self.client) for person in info['people']['person']]
-        except KeyError:
-            return []
-
-    def title(self, url):
-        requestUrl = url
-        try:
-            info = simplejson.loads(self.client._getResource(requestUrl))
-            return NetflixTitle(info['catalog_title'],self.client)
-        except urllib2.HTTPError:
-            return None
-
-    def person(self,url):
-        requestUrl = url
-        try:
-            info = simplejson.loads(self.client._getResource(requestUrl))
-            return NetflixPerson(info['person'],self.client)
-        except urllib2.HTTPError:
-            return None
 
 class NetflixUserQueue:
     def __init__(self,user):
@@ -457,10 +470,7 @@ class NetflixUserQueue:
         response = self.client._deleteResource(entryID, token=accessToken)
         return response
 
-class NetflixPerson:
-    def __init__(self,personInfo,client):
-        self.info = personInfo
-        self.client = client
+class NetflixPerson(NetflixBase):
 
     @property
     def id(self):
@@ -482,32 +492,14 @@ class NetflixPerson:
         else:
             return NetflixTitle(raw_films,self.client)
 
-    def getInfo(self,field):
-        fields = []
-        url = ''
-        for link in self.info['link']:
-            fields.append(link['title'])
-            if link['title'] == field:
-                url = link['href']
-        if not url:
-            errorString = "Invalid or missing field.  " + \
-                          "Acceptable fields for this object are:\n" + \
-                          "\n\n".join(fields)
-            log.debug(errorString)
-            return None
-        try:
-            return simplejson.loads(self.client._getResource(url))
-        except:
-            return []
-
-class NetflixTitle:
-    def __init__(self,discInfo,client):
-        self.info = discInfo
-        self.client = client
+class NetflixTitle(NetflixBase):
 
     @property
     def id(self):
-        return self.info['id']
+        try:
+            return self.getInfoLink['http://schemas.netflix.com/catalog/title']
+        except:
+            return self.info['id']
 
     @property
     def int_id(self):
@@ -649,112 +641,90 @@ class NetflixTitle:
         except:
             return []
 
-    def getInfo(self,field):
-        fields = []
-        url = ''
-        for link in self.info['link']:
-            fields.append(link['title'])
-            if link['title'] == field:
-                url = link['href']
-        if not url:
-            errorString = "Invalid or missing field.  " + \
-                          "Acceptable fields for this object are:\n" + \
-                          "\n\n".join(fields)
-            log.debug(errorString)
-            return None
+class NetflixCatalog():
+    def __init__(self,client):
+        self.client = client
+
+    @property
+    def index(self):
+        requestUrl = '/catalog/titles/index'
+
+        return self.client._getResource(
+            requestUrl,
+            self.client.user.accessToken,
+            {},
+            True
+        )
+
+    def autocomplete(self, term,startIndex=None,maxResults=None):
+        requestUrl = '/catalog/titles/autocomplete'
+        parameters = {'term': term}
+        if startIndex:
+            parameters['start_index'] = startIndex
+        if maxResults:
+            parameters['max_results'] = maxResults
+
         try:
-            return simplejson.loads(self.client._getResource(url))
-        except:
+            info = simplejson.loads(
+                self.client._getResource(
+                    requestUrl,
+                    parameters=parameters
+                )
+            )
+            return [x['title']['short'] for x in info['autocomplete']['autocomplete_item']]
+        except KeyError:
             return []
 
-class NetflixClient:
-    def __init__(self, name, key, secret, callback='',verbose=False):
-        self.connection = httplib.HTTPConnection(HOST, PORT)
-        self.server = HOST
-        self.verbose = verbose
-        self.user = None
-        self.catalog = NetflixCatalog(self)
-        
-        self.CONSUMER_NAME=name
-        self.CONSUMER_KEY=key
-        self.CONSUMER_SECRET=secret
-        self.CONSUMER_CALLBACK=callback
-        self.consumer = oauth.OAuthConsumer(
-                                    self.CONSUMER_KEY,
-                                    self.CONSUMER_SECRET)
-        self.signature_method_hmac_sha1 = \
-                                    oauth.OAuthSignatureMethod_HMAC_SHA1()
+    def search_titles(self, term,startIndex=None,maxResults=None):
+        requestUrl = '/catalog/titles'
+        parameters = {'term': term}
+        if startIndex:
+            parameters['start_index'] = startIndex
+        if maxResults:
+            parameters['max_results'] = maxResults
 
-    def _getResource(self, url, token=None, parameters={}, xml=False):
-        if not re.match('http',url):
-            url = "http://%s%s" % (HOST, url)
-        if not xml:
-            parameters['output'] = 'json'
-        oauthRequest = oauth.OAuthRequest.from_consumer_and_token(
-                                    self.consumer,
-                                    http_url=url,
-                                    parameters=parameters,
-                                    token=token)
-        oauthRequest.sign_request(  
-                                    self.signature_method_hmac_sha1,
-                                    self.consumer,
-                                    token)
+        try:
+            info = simplejson.loads(
+                self.client._getResource(
+                    requestUrl,
+                    parameters=parameters
+                )
+            )
+            return [NetflixTitle(title,self.client) for title in info['catalog_titles']['catalog_title']]
+        except KeyError:
+            return []
 
-        if (self.verbose):
-            print oauthRequest.to_url()
+    def search_people(self, term,startIndex=None,maxResults=None):
+        requestUrl = '/catalog/people'
+        parameters = {'term': term}
+        if startIndex:
+            parameters['start_index'] = startIndex
+        if maxResults:
+            parameters['max_results'] = maxResults
 
-        headers = {'Accept-encoding':'gzip'}
+        try:
+            info = simplejson.loads(
+                self.client._getResource(
+                    requestUrl,
+                    parameters=parameters
+                )
+            )
+            return [NetflixPerson(person,self.client) for person in info['people']['person']]
+        except KeyError:
+            return []
 
-        req = urllib2.Request(oauthRequest.to_url(), None, headers)
-        response = urllib2.urlopen(req)
-        data = gzip.GzipFile(fileobj=StringIO.StringIO(response.read())).read()
-        return data
+    def title(self, url):
+        requestUrl = url
+        try:
+            info = simplejson.loads(self.client._getResource(requestUrl))
+            return NetflixTitle(info['catalog_title'],self.client)
+        except urllib2.HTTPError:
+            return None
 
-    def _postResource(self, url, token=None, parameters=None):
-        if not re.match('http',url):
-            url = "http://%s%s" % (HOST, url)
-
-        oauthRequest = oauth.OAuthRequest.from_consumer_and_token(
-                                    self.consumer,
-                                    http_url=url,
-                                    parameters=parameters,
-                                    token=token,
-                                    http_method='POST')
-        oauthRequest.sign_request(
-                                    self.signature_method_hmac_sha1,
-                                    self.consumer,
-                                    token)
-
-        if (self.verbose):
-            print "POSTING TO" + oauthRequest.to_url()
-
-        headers = {'Content-Type':'application/x-www-form-urlencoded',
-                   'Accept-encoding':'gzip'}
-
-        data = oauthRequest.to_postdata()
-        req = urllib2.Request(oauthRequest.to_url(), data, headers)
-        response = urllib2.urlopen(req)
-        data = gzip.GzipFile(fileobj=StringIO.StringIO(response.read())).read()
-        return data
-
-    def _deleteResource(self, url, token=None, parameters=None):
-        if not re.match('http',url):
-            url = "http://%s%s" % (HOST, url)
-
-        oauthRequest = oauth.OAuthRequest.from_consumer_and_token(
-                                    self.consumer,
-                                    http_url=url,
-                                    parameters=parameters,
-                                    token=token,
-                                    http_method='DELETE')
-        oauthRequest.sign_request(
-                                    self.signature_method_hmac_sha1,
-                                    self.consumer,
-                                    token)
-
-        if (self.verbose):
-            print "DELETING FROM" + oauthRequest.to_url()
-
-        self.connection.request('DELETE', oauthRequest.to_url())
-        response = self.connection.getresponse()
-        return response.read()
+    def person(self,url):
+        requestUrl = url
+        try:
+            info = simplejson.loads(self.client._getResource(requestUrl))
+            return NetflixPerson(info['person'],self.client)
+        except urllib2.HTTPError:
+            return None
