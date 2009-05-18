@@ -168,22 +168,26 @@ class NetflixUser(NetflixBase):
         self.accessTokenUrl  = ACCESS_TOKEN_URL
         self.authorizationUrl = AUTHORIZATION_URL
 
-        self.accessToken = oauth.OAuthToken(
-            user_auth_dict['access']['key'],
-            user_auth_dict['access']['secret']
-        )
-
-        # get the actual user data
-        requestUrl = '/users/%s' % (self.accessToken.key)
-
-        raw_json = simplejson.loads(
-            client._getResource(
-                requestUrl,
-                token=self.accessToken
+        if user_auth_dict:
+            self.accessToken = oauth.OAuthToken(
+                user_auth_dict['access']['key'],
+                user_auth_dict['access']['secret']
             )
-        )
 
-        super(NetflixUser, self).__init__(raw_json['user'], client)
+            # get the actual user data
+            requestUrl = '/users/%s' % (self.accessToken.key)
+
+            raw_json = simplejson.loads(
+                client._getResource(
+                    requestUrl,
+                    token=self.accessToken
+                )
+            )
+
+            super(NetflixUser, self).__init__(raw_json['user'], client)
+        else:
+            self.accessToken = None
+            super(NetflixUser, self).__init__(None, client)
 
     @property
     def name(self):
@@ -251,6 +255,11 @@ class NetflixUser(NetflixBase):
    
     def getAccessToken(self, requestToken):
         client = self.client
+
+        if not isinstance(requestToken, oauth.OAuthToken):
+            requestToken = oauth.OAuthToken(
+                requestToken['key'],
+                requestToken['secret'])
 
         oauthRequest = oauth.OAuthRequest.from_consumer_and_token(
             client.consumer,
