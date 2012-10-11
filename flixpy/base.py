@@ -12,12 +12,13 @@ from datetime import datetime
 import oauth2 as oauth
 
 from urlparse import urlparse
-from xml.dom.minidom import parseString
 
-HOST              = 'api.netflix.com'
+HOST              = 'api-public.netflix.com'
 PORT              = '80'
-REQUEST_TOKEN_URL = 'http://api.netflix.com/oauth/request_token'
-ACCESS_TOKEN_URL  = 'http://api.netflix.com/oauth/access_token'
+
+# For Oauth
+REQUEST_TOKEN_URL = 'http://api-public.netflix.com/oauth/request_token'
+ACCESS_TOKEN_URL  = 'http://api-public.netflix.com/oauth/access_token'
 AUTHORIZATION_URL = 'https://api-user.netflix.com/oauth/login'
 
 TITLE_URL = 'http://schemas.netflix.com/catalog/title'

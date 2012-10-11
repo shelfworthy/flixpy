@@ -10,13 +10,13 @@ version = '0.1'
 read = lambda filepath: codecs.open(filepath, 'r', 'utf-8').read()
 
 setup(
-    name='python-netflix-streaming',
+    name='flixpy',
     version=version,
     description="A python API wrapper specificly designed to work with netflix's streaming API",
     long_description=read(os.path.join(os.path.dirname(__file__), 'README.markdown')),
     author='Chris Drackett',
     author_email='chris@shelfworthy.com',
-    url='http://github.com/shelfworthy/python-netflix-streaming',
+    url='http://github.com/shelfworthy/flixpy',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
