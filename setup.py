@@ -1,9 +1,13 @@
+#/usr/bin/env python
+import codecs
 import os
 import sys
 
 from setuptools import setup, find_packages
 
 version = '0.1'
+
+read = lambda filepath: codecs.open(filepath, 'r', 'utf-8').read()
 
 setup(
     name='python-netflix-streaming',
