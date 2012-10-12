@@ -68,7 +68,7 @@ class NetflixClient:
 
 
 
-    def _getResource(self, url, token=None, parameters={}):
+    def _get_resource(self, url, token=None, parameters={}):
         if not re.match('http', url):
             url = "http://%s%s" % (self.server, url)
 
@@ -138,7 +138,7 @@ class NetflixBase(object):
         self.info = raw_json
         self.client = client
 
-    def getInfo(self,field):
+    def get_info(self,field):
         # try and get a token from the clients user object (if it exists)
         try:
             token = self.client.user.accessToken
@@ -158,11 +158,11 @@ class NetflixBase(object):
             log.debug(errorString)
             return None
         try:
-            return json.loads(self.client._getResource(url, token))
+            return json.loads(self.client._get_resource(url, token))
         except:
             return []
 
-    def getInfoLink(self,field):
+    def get_infoLink(self,field):
         for link in self.info['link']:
             if link['title'] == field or link['rel'] == field:
                 return link['href']
@@ -173,7 +173,7 @@ class NetflixUser(NetflixBase):
         requestUrl = '/users/current'
 
             raw_json = json.loads(
-                client._getResource(
+                client._get_resource(
                     requestUrl,
                     token=self.accessToken
                 )
@@ -203,10 +203,10 @@ class NetflixUser(NetflixBase):
         return self.info['can_instant_watch'] == 'true'
 
     def at_home(self):
-        if isinstance(self.getInfo('at home')['at_home']['at_home_item'], list):
-            return [NetflixTitle(title,self.client) for title in self.getInfo('at home')['at_home']['at_home_item']]
+        if isinstance(self.get_info('at home')['at_home']['at_home_item'], list):
+            return [NetflixTitle(title,self.client) for title in self.get_info('at home')['at_home']['at_home_item']]
         else:
-            return [NetflixTitle(self.getInfo('at home')['at_home']['at_home_item'],self.client)]
+            return [NetflixTitle(self.get_info('at home')['at_home']['at_home_item'],self.client)]
 
     def getQueue(self):
         # finish up member / queue interaction
@@ -226,7 +226,7 @@ class NetflixUser(NetflixBase):
                 urls.append(discInfo['id'])
         parameters = { 'title_refs': ','.join(urls) }
 
-        info = json.loads( self.client._getResource(
+        info = json.loads( self.client._get_resource(
                                     requestUrl,
                                     parameters=parameters,
                                     token=accessToken ) )
@@ -268,7 +268,7 @@ class NetflixUser(NetflixBase):
             requestUrl = '/users/%s/rental_history/%s' % (accessToken.key,type)
 
         try:
-            info = json.loads( self.client._getResource(
+            info = json.loads( self.client._get_resource(
                                     requestUrl,
                                     parameters=parameters,
                                     token=accessToken))
@@ -297,7 +297,7 @@ class NetflixUserQueue:
 
         requestUrl = '/users/%s/queues' % (self.user.accessToken.key)
         try:
-            info = json.loads(self.client._getResource(
+            info = json.loads(self.client._get_resource(
                                     requestUrl,
                                     parameters=parameters,
                                     token=self.user.accessToken ))
@@ -323,7 +323,7 @@ class NetflixUserQueue:
                                     self.user.accessToken.key,
                                     type)
         try:
-            info = json.loads(self.client._getResource(
+            info = json.loads(self.client._get_resource(
                                     requestUrl,
                                     parameters=parameters,
                                     token=self.user.accessToken ))
@@ -349,7 +349,7 @@ class NetflixUserQueue:
                                     self.user.accessToken.key,
                                     type)
         try:
-            info = json.loads(self.client._getResource(
+            info = json.loads(self.client._get_resource(
                                     requestUrl,
                                     parameters=parameters,
                                     token=self.user.accessToken))
@@ -376,7 +376,7 @@ class NetflixUserQueue:
         parameters = {'title_ref': ','.join(urls)}
 
         if not self.tag:
-            response = self.client._getResource(
+            response = self.client._get_resource(
                                     requestUrl,
                                     token=accessToken)
             response = json.loads(response)
@@ -400,7 +400,7 @@ class NetflixUserQueue:
         # First, we gotta find the entry to delete
         queueparams = {'max_results': 500}
         requestUrl = '/users/%s/queues/disc' % (accessToken.key)
-        response = self.client._getResource(
+        response = self.client._get_resource(
                                     requestUrl,
                                     token=accessToken,
                                     parameters=queueparams)
@@ -415,7 +415,7 @@ class NetflixUserQueue:
 
         if not entryID:
             return
-        firstResponse = self.client._getResource(
+        firstResponse = self.client._get_resource(
                                     entryID,
                                     token=accessToken,
                                     parameters=parameters)
@@ -434,7 +434,7 @@ class NetflixPerson(NetflixBase):
         return self.info['name']
 
     def filmography(self):
-        raw_films = self.getInfo('filmography')['filmography']['filmography_item']
+        raw_films = self.get_info('filmography')['filmography']['filmography_item']
 
         if isinstance(raw_films, list):
             films = []
@@ -448,11 +448,11 @@ class NetflixTitle(NetflixBase):
     # helper functions for parent and child functions
 
     def _get_title_single(self, url):
-        return NetflixTitle(self.getInfo(url)['catalog_title'],self.client)
+        return NetflixTitle(self.get_info(url)['catalog_title'],self.client)
 
     def _get_title_list(self, url):
         try:
-            return [NetflixTitle(title,self.client) for title in self.getInfo(url)['catalog_titles']['catalog_title']]
+            return [NetflixTitle(title,self.client) for title in self.get_info(url)['catalog_titles']['catalog_title']]
         except TypeError:
             return []
 
@@ -485,7 +485,7 @@ class NetflixTitle(NetflixBase):
 
     @property
     def id(self):
-        return self.getInfoLink(TITLE_URL) or self.info['id']
+        return self.get_infoLink(TITLE_URL) or self.info['id']
 
     @property
     def int_id(self):
@@ -603,7 +603,7 @@ class NetflixTitle(NetflixBase):
     # deeper info about an item (requires more queries of the netflix api)
 
     def formats(self):
-        raw_formats = self.getInfo('formats')['delivery_formats']['availability']
+        raw_formats = self.get_info('formats')['delivery_formats']['availability']
         if isinstance(raw_formats, list):
             formats = []
             for format in raw_formats:
@@ -617,7 +617,7 @@ class NetflixTitle(NetflixBase):
             return [{'format':format_name, 'release_date': release_date}]
 
     def directors(self):
-        raw_directors = self.getInfo('directors')
+        raw_directors = self.get_info('directors')
         raw_directors = raw_directors['people']['person']
         if isinstance(raw_directors, list):
             directors = []
@@ -628,7 +628,7 @@ class NetflixTitle(NetflixBase):
             return NetflixPerson(raw_directors, self.client)
 
     def cast(self):
-        raw_cast = self.getInfo('cast')
+        raw_cast = self.get_info('cast')
         raw_cast = raw_cast['people']['person']
         if isinstance(raw_cast, list):
             return [NetflixPerson(person, self.client) for person in raw_cast]
@@ -636,14 +636,14 @@ class NetflixTitle(NetflixBase):
             return NetflixPerson(raw_cast, self.client)
 
     def bonus_material(self):
-        raw_bonus = self.getInfo('bonus materials')
+        raw_bonus = self.get_info('bonus materials')
         if raw_bonus:
             return [self.client.catalog.title(title['href']) for title in raw_bonus['bonus_materials']['link']]
         else:
             return []
 
     def similar_titles(self):
-        raw_sim = self.getInfo('similars')
+        raw_sim = self.get_info('similars')
         if raw_sim:
             raw_sim = raw_sim['similars']['similars_item']
 
@@ -659,8 +659,8 @@ class NetflixTitle(NetflixBase):
 
         try:
             return json.loads(
-                self.client._getResource(
-                    url=user.getInfo('title states')['title_states']['url_template'].split('?')[0],
+                self.client._get_resource(
+                    url=user.get_info('title states')['title_states']['url_template'].split('?')[0],
                     token=user.accessToken,
                     parameters={'title_refs':self.id}
                 )
@@ -675,7 +675,7 @@ class NetflixCatalog():
     def index(self):
         requestUrl = '/catalog/titles/index'
 
-        return self.client._getResource(
+        return self.client._get_resource(
             requestUrl,
             self.client.user.accessToken,
             {},
@@ -692,7 +692,7 @@ class NetflixCatalog():
 
         try:
             info = json.loads(
-                self.client._getResource(
+                self.client._get_resource(
                     requestUrl,
                     parameters=parameters
                 )
@@ -711,7 +711,7 @@ class NetflixCatalog():
 
         try:
             info = json.loads(
-                self.client._getResource(
+                self.client._get_resource(
                     requestUrl,
                     parameters=parameters
                 )
@@ -730,7 +730,7 @@ class NetflixCatalog():
 
         try:
             info = json.loads(
-                self.client._getResource(
+                self.client._get_resource(
                     requestUrl,
                     parameters=parameters
                 )
@@ -742,7 +742,7 @@ class NetflixCatalog():
     def title(self, url):
         requestUrl = url
         try:
-            info = json.loads(self.client._getResource(requestUrl))
+            info = json.loads(self.client._get_resource(requestUrl))
             return NetflixTitle(info['catalog_title'],self.client)
         except urllib2.HTTPError:
             return None
@@ -750,7 +750,7 @@ class NetflixCatalog():
     def person(self,url):
         requestUrl = url
         try:
-            info = json.loads(self.client._getResource(requestUrl))
+            info = json.loads(self.client._get_resource(requestUrl))
             return NetflixPerson(info['person'],self.client)
         except urllib2.HTTPError:
             return None

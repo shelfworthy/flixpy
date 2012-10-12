@@ -6,7 +6,7 @@ class NetflixCatalog(object):
 
     def streaming(self):
         # NOTE this downloads *all* the streaming titles on netflix. This may take a while ;)
-        return self.client.getResource('/catalog/titles/streaming', index=True)
+        return self.client.get_resource('/catalog/titles/streaming', index=True)
 
     def _search(self, url, term, startIndex=None, maxResults=None, expand=None):
         parameters = {
@@ -20,7 +20,7 @@ class NetflixCatalog(object):
         if expand:
             parameters['expand'] = expand
 
-        return self.client.getResource(url, parameters)
+        return self.client.get_resource(url, parameters)
 
     def autocomplete(self, term, startIndex=None, maxResults=None):
         results = self._search('/catalog/titles/autocomplete', term, startIndex, maxResults)

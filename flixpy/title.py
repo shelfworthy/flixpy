@@ -1,34 +1,8 @@
+from datetime import timedelta
+
 from flixpy.base import NetflixBase
 
 class NetflixTitle(NetflixBase):
-    # helper functions for parent and child functions
-    def _get_title_single(self, url):
-        return NetflixTitle(self.getInfo(url)['catalog_title'], self.client)
-
-    def _get_title_list(self, url):
-        try:
-            return [NetflixTitle(title, self.client) for title in self.getInfo(url)['catalog_titles']['catalog_title']]
-        except TypeError:
-            return []
-
-    # These functions get the items parents, if they exist
-
-    def season(self):
-        return self._get_title_single(SEASON_URL)
-
-    def series(self):
-        return self._get_title_single(SERIES_URL)
-
-    # These functions get the items children, if they exist
-
-    def seasons(self):
-        return self._get_title_list(SEASONS_URL)
-
-    def episodes(self):
-        return self._get_title_list(EPISODES_URL)
-
-    # These functions deal with the current items details
-
     def __repr__(self):
         return self.title
 
@@ -38,6 +12,8 @@ class NetflixTitle(NetflixBase):
 
     @property
     def title(self):
+        if isinstance(self.data['title'], dict):
+            return self.data['title']['regular']
         return self.data['title']
 
     @property
@@ -45,22 +21,51 @@ class NetflixTitle(NetflixBase):
         return int(self.data['id'].split('/')[-1])
 
     @property
-    def type(self):
-        '''
-        get the item type:
-            movie
-            series
-            season
-            episode (netflix calles this program, which is dumb)
-        '''
-        raw = self.id.split('/')[-2]
-        if raw != 'series':
-            # remove the 's' from the end of everything but series
-            return self.id.split('/')[-2][0:-1]
+    def synopsis(self):
+        raw = self.get_info('synopsis')
+        return raw['regular']
+
+    # the following all assumes we're talking about streaming
+
+    @property
+    def available(self):
+        raw = self.get_info('format_availability')
+        return 'instant' in raw['delivery_formats']
+
+    def _stream_info(self, key):
+        if self.available:
+            instant = self.get_info('format_availability')['delivery_formats']['instant']
+            if key in instant:
+                return instant[key]
+        return None
+
+    @property
+    def mpaa_rating(self):
+        return self._stream_info('mpaa_ratings')
+
+    @property
+    def tv_rating(self):
+        return self._stream_info('tv_ratings')
+
+    @property
+    def is_hd(self):
+        return self._stream_info('quality') == 'HD'
+
+    @property
+    def length(self):
+        runtime = self._stream_info('runtime')
+
+        if runtime:
+            runtime = str(timedelta(seconds=runtime))
+
+        return runtime
+
+    @property
+    def watch_link(self):
+        if self.available:
+            return 'https://movies.netflix.com/WiPlayer?movieid=%s' % self.int_id
         else:
-            return raw
-
-
+            return None
 
 '''
 
@@ -103,21 +108,8 @@ class NetflixTitle(NetflixBase):
         except TypeError:
             return None
 
-    @property
-    def length(self):
-        seconds = int(self.info['runtime'])
-        return seconds/60
 
-    @property
-    def rating(self):
-        if
 
-    @property
-    def mpaa_rating(self):
-        for i in self.info['category']:
-            if i['scheme'] == 'http://api.netflix.com/categories/mpaa_ratings':
-                return i['term']
-        return None
 
     @property
     def tv_rating(self):
@@ -126,24 +118,12 @@ class NetflixTitle(NetflixBase):
                 return i['term']
         return None
 
-    @property
-    def release_year(self):
-        try:
-            return self.info['release_year']
-        except KeyError:
-            return None
 
-    @property
-    def shipped_date(self):
-        try:
-            return datetime.fromtimestamp(float(self.info['shipped_date']))
-        except KeyError:
-            return None
 
     # deeper info about an item (requires more queries of the netflix api)
 
     def directors(self):
-        raw_directors = self.getInfo('directors')
+        raw_directors = self.get_info('directors')
         raw_directors = raw_directors['people']['person']
         if isinstance(raw_directors, list):
             directors = []
@@ -154,7 +134,7 @@ class NetflixTitle(NetflixBase):
             return NetflixPerson(raw_directors, self.client)
 
     def cast(self):
-        raw_cast = self.getInfo('cast')
+        raw_cast = self.get_info('cast')
         raw_cast = raw_cast['people']['person']
         if isinstance(raw_cast, list):
             return [NetflixPerson(person, self.client) for person in raw_cast]
@@ -162,14 +142,14 @@ class NetflixTitle(NetflixBase):
             return NetflixPerson(raw_cast, self.client)
 
     def bonus_material(self):
-        raw_bonus = self.getInfo('bonus materials')
+        raw_bonus = self.get_info('bonus materials')
         if raw_bonus:
             return [self.client.catalog.title(title['href']) for title in raw_bonus['bonus_materials']['link']]
         else:
             return []
 
     def similar_titles(self):
-        raw_sim = self.getInfo('similars')
+        raw_sim = self.get_info('similars')
         if raw_sim:
             raw_sim = raw_sim['similars']['similars_item']
 
@@ -185,8 +165,8 @@ class NetflixTitle(NetflixBase):
 
         try:
             return json.loads(
-                self.client._getResource(
-                    url=user.getInfo('title states')['title_states']['url_template'].split('?')[0],
+                self.client._get_resource(
+                    url=user.get_info('title states')['title_states']['url_template'].split('?')[0],
                     token=user.accessToken,
                     parameters={'title_refs':self.id}
                 )

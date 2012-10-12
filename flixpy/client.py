@@ -11,10 +11,6 @@ from flixpy.catalog import NetflixCatalog
 
 log = logging.getLogger('flixpy.client')
 
-class NetflixError(Exception):
-    """ Error thrown if the netflix api throws http error"""
-    pass
-
 class NetflixClient(object):
     def __init__(self, application_name, consumer_key, consumer_secret, token_key=None, token_secret=None):
         self.application_name = application_name
@@ -61,12 +57,12 @@ class NetflixClient(object):
 
         return response.json
 
-    def getResource(self, url, params=None, default_params=True):
+    def get_resource(self, url, params=None, default_params=True):
         return self._request('get', url, params, default_params)
 
-    def postResource(self, url, params=None):
+    def post_resource(self, url, params=None):
         return self._request('post', url, params)
 
-    def deleteResource(self, url, params=None):
+    def delete_resource(self, url, params=None):
         return self._request('delete', url, params)
 
