@@ -44,4 +44,4 @@ print results
 
 ```
 
-Note that autocomplete only returns titles that you can
+*Note that autocomplete only returns title strings. You can then use these in search to get exact matches with more data.*
