@@ -21,7 +21,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'oauth2==1.5.211',
+        'requests-oauth==0.4.1',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
