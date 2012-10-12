@@ -34,7 +34,7 @@ class NetflixTitle(NetflixBase):
 
     @property
     def id(self):
-        return self.getInfoLink(TITLE_URL) or self.info['id']
+        return self.getInfoLink('/catalog/titles') or self.info['id']
 
     @property
     def int_id(self):
