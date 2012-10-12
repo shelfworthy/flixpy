@@ -45,3 +45,39 @@ print results
 ```
 
 *Note that autocomplete only returns title strings. You can then use these in search to get exact matches with more data.*
+
+Or do an actual search:
+
+``` python
+
+results = netflix.catalog.search('invader zim')
+
+print results
+
+[Invader Zim,
+ Invader,
+ The Invader,
+ Invisible Invaders,
+ ...
+```
+
+The catalog search returns NetflixTitle objects instead of strings. This way you can use them to get more information:
+
+``` python
+
+zim = netflix.catalog.search('invader zim')[0]
+zim.synopsis
+
+u'Zim, a pint-sized alien with an attitude, decides to single-handedly conquer the human race. Standing in his way is a paranoid kid named Dib. Since neither of them is exactly competent, their confrontations tend to result in disaster.'
+
+zim.available
+
+True  # this title is availble for streaming
+
+zim.watch_link
+
+'https://movies.netflix.com/WiPlayer?movieid=70202354'
+
+```
+
+More Coming Soon!
