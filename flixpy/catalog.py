@@ -8,7 +8,7 @@ class NetflixCatalog(object):
         # NOTE this downloads *all* the streaming titles on netflix. This may take a while ;)
         return self.client.getResource('/catalog/titles/streaming', index=True)
 
-    def _search(self, url, term, startIndex=None, maxResults=None):
+    def _search(self, url, term, startIndex=None, maxResults=None, expand=None):
         parameters = {
             'term': term
         }
@@ -17,6 +17,8 @@ class NetflixCatalog(object):
             parameters['start_index'] = startIndex
         if maxResults:
             parameters['max_results'] = maxResults
+        if expand:
+            parameters['expand'] = expand
 
         return self.client.getResource(url, parameters)
 
@@ -28,8 +30,10 @@ class NetflixCatalog(object):
         except KeyError:
             return []
 
-    def search(self, term, startIndex=None, maxResults=None):
-        results = self._search('/catalog/titles', term, startIndex, maxResults)
+    def search(self, term, startIndex=None, maxResults=None, expand=None):
+        results = self._search('/catalog/titles', term, startIndex, maxResults, expand)
+
+        print results
 
         try:
             return [NetflixTitle(title, self.client) for title in results['catalog']]
