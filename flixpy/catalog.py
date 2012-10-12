@@ -25,15 +25,12 @@ class NetflixCatalog(object):
     def autocomplete(self, term, startIndex=None, maxResults=None):
         results = self._search('/catalog/titles/autocomplete', term, startIndex, maxResults)
 
-        try:
-            return [x['title']['short'] for x in results['autocomplete']['autocomplete_item']]
-        except KeyError:
-            return []
+        if results['autocomplete']:
+            return results['autocomplete']['title']
+        return []
 
     def search(self, term, startIndex=None, maxResults=None, expand=None):
         results = self._search('/catalog/titles', term, startIndex, maxResults, expand)
-
-        print results
 
         try:
             return [NetflixTitle(title, self.client) for title in results['catalog']]

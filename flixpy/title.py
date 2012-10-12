@@ -34,11 +34,15 @@ class NetflixTitle(NetflixBase):
 
     @property
     def id(self):
-        return self.getInfoLink('/catalog/titles') or self.info['id']
+        return self.data['id']
+
+    @property
+    def title(self):
+        return self.data['title']
 
     @property
     def int_id(self):
-        return self.info['id'].split('/')[-1]
+        return int(self.data['id'].split('/')[-1])
 
     @property
     def type(self):
@@ -56,9 +60,7 @@ class NetflixTitle(NetflixBase):
         else:
             return raw
 
-    @property
-    def title(self):
-        return self.info['title']
+
 
 '''
 
