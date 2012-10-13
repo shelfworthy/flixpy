@@ -18,10 +18,10 @@ class NetflixClient(object):
         self.connection = httplib.HTTPConnection(self.server, '80')
 
         # Setting up the OAuth client
-        self.client_key = client_key
-        self.client_secret = client_secret
-        self.resource_owner_key = resource_owner_key
-        self.resource_owner_secret = resource_owner_secret
+        self.client_key = unicode(client_key)
+        self.client_secret = unicode(client_secret)
+        self.resource_owner_key = unicode(resource_owner_key)
+        self.resource_owner_secret = unicode(resource_owner_secret)
 
         self.catalog = NetflixCatalog(self)
 
@@ -32,15 +32,15 @@ class NetflixClient(object):
         request_params = {}
 
         if default_params:
-            request_params['output'] = 'json'
-            request_params['v'] = 2.0
+            request_params['output'] = u'json'
+            request_params['v'] = u'2.0'
             # request_params['application_name'] = self.application_name
         if params:
             request_params = dict(request_params.items() + params.items())
 
-        oauth = OAuth1(self.client_key, self.client_secret, self.resource_owner_key, self.resource_owner_secret, signature_type='auth_header')
+        oauth = OAuth1(self.client_key, self.client_secret, self.resource_owner_key, self.resource_owner_secret, signature_type='query')
 
-        response = requests.request(method, url, data=request_params, allow_redirects=True, auth=oauth, headers={'Accept-encoding': 'gzip'})
+        response = requests.request(method, url, params=request_params, allow_redirects=True, auth=oauth, headers={'Accept-encoding': 'gzip'})
 
         # raise an error if we get it
         response.raise_for_status()
