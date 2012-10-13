@@ -20,8 +20,12 @@ class NetflixClient(object):
         # Setting up the OAuth client
         self.client_key = unicode(client_key)
         self.client_secret = unicode(client_secret)
-        self.resource_owner_key = unicode(resource_owner_key)
-        self.resource_owner_secret = unicode(resource_owner_secret)
+
+        if resource_owner_key and resource_owner_secret:
+            self.resource_owner_key = unicode(resource_owner_key)
+            self.resource_owner_secret = unicode(resource_owner_secret)
+        else:
+            self.resource_owner_key = self.resource_owner_secret = None
 
         self.catalog = NetflixCatalog(self)
 
@@ -38,7 +42,7 @@ class NetflixClient(object):
         if params:
             request_params = dict(request_params.items() + params.items())
 
-        oauth = OAuth1(self.client_key, self.client_secret, self.resource_owner_key, self.resource_owner_secret, signature_type='query')
+        oauth = OAuth1(self.client_key, self.client_secret, self.resource_owner_key, self.resource_owner_secret, signature_type='auth_header')
 
         response = requests.request(method, url, params=request_params, allow_redirects=True, auth=oauth, headers={'Accept-encoding': 'gzip'})
 
