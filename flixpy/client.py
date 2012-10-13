@@ -8,11 +8,12 @@ import requests
 from requests.auth import OAuth1
 
 from flixpy.catalog import NetflixCatalog
+from flixpy.user import NetflixUser
 
 log = logging.getLogger('flixpy.client')
 
 class NetflixClient(object):
-    def __init__(self, application_name, client_key, client_secret, resource_owner_key=None, resource_owner_secret=None, callback=None):
+    def __init__(self, application_name, client_key, client_secret, resource_owner_key=None, resource_owner_secret=None, callback=None, user_id=None):
         self.application_name = application_name
         self.server = 'api-public.netflix.com'
         self.connection = httplib.HTTPConnection(self.server, '80')
@@ -29,13 +30,16 @@ class NetflixClient(object):
         if resource_owner_key and resource_owner_secret:
             self.resource_owner_key = unicode(resource_owner_key)
             self.resource_owner_secret = unicode(resource_owner_secret)
+            self.user = NetflixUser(self, user_id)
         else:
             self.resource_owner_key = self.resource_owner_secret = None
+
+        self.oauth = OAuth1(self.client_key, self.client_secret, self.resource_owner_key, self.resource_owner_secret, signature_type='query')
 
         # Attach the netflix catalog functions
         self.catalog = NetflixCatalog(self)
 
-    def _request(self, method, url, params=None, default_params=True, oauth=None):
+    def _request(self, method, url, params=None, default_params=True):
         if not re.match('http', url):
             url = "http://%s%s" % (self.server, url)
 
@@ -48,10 +52,7 @@ class NetflixClient(object):
         if params:
             request_params = dict(request_params.items() + params.items())
 
-        if not oauth:
-            oauth = OAuth1(self.client_key, self.client_secret, self.resource_owner_key, self.resource_owner_secret, signature_type='auth_header')
-
-        response = requests.request(method, url, params=request_params, allow_redirects=True, auth=oauth, headers={'Accept-encoding': 'gzip'})
+        response = requests.request(method, url, params=request_params, allow_redirects=True, auth=self.oauth, headers={'Accept-encoding': 'gzip'})
 
         # raise an error if we get it
         response.raise_for_status()
@@ -81,10 +82,14 @@ class NetflixClient(object):
         return (secret_and_token, url)
 
     def get_access_token(self, secret, token):
-        response = self.get_resource(
-            '/oauth/access_token',
-            oauth=OAuth1(self.client_key, self.client_secret, token, secret, signature_type='auth_header')
-        )
+        self.oauth = OAuth1(self.client_key, self.client_secret, token, secret, signature_type='auth_header')
+
+        response = self.get_resource('/oauth/access_token')
+
+        # connect this new user to this client
+        self.oauth = OAuth1(self.client_key, self.client_secret, unicode(response['oauth_token']), unicode(response['oauth_token_secret']), signature_type='query')
+        self.user = NetflixUser(self)
+
         return response
 
     def verify_credentials(self):
