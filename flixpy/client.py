@@ -35,7 +35,7 @@ class NetflixClient(object):
         # Attach the netflix catalog functions
         self.catalog = NetflixCatalog(self)
 
-    def _request(self, method, url, params=None, default_params=True):
+    def _request(self, method, url, params=None, default_params=True, oauth=None):
         if not re.match('http', url):
             url = "http://%s%s" % (self.server, url)
 
@@ -48,7 +48,8 @@ class NetflixClient(object):
         if params:
             request_params = dict(request_params.items() + params.items())
 
-        oauth = OAuth1(self.client_key, self.client_secret, self.resource_owner_key, self.resource_owner_secret, signature_type='auth_header')
+        if not oauth:
+            oauth = OAuth1(self.client_key, self.client_secret, self.resource_owner_key, self.resource_owner_secret, signature_type='auth_header')
 
         response = requests.request(method, url, params=request_params, allow_redirects=True, auth=oauth, headers={'Accept-encoding': 'gzip'})
 
@@ -57,14 +58,14 @@ class NetflixClient(object):
 
         return response.json
 
-    def get_resource(self, url, params=None, default_params=True):
-        return self._request('get', url, params, default_params)
+    def get_resource(self, url, params=None, **kwargs):
+        return self._request('get', url, params, **kwargs)
 
-    def post_resource(self, url, params=None):
-        return self._request('post', url, params)
+    def post_resource(self, url, params=None, **kwargs):
+        return self._request('post', url, params, **kwargs)
 
-    def delete_resource(self, url, params=None):
-        return self._request('delete', url, params)
+    def delete_resource(self, url, params=None, **kwargs):
+        return self._request('delete', url, params, **kwargs)
 
     # Auth
 
@@ -72,7 +73,7 @@ class NetflixClient(object):
         response = self.get_resource('/oauth/request_token')
         secret_and_token = (response['oauth_token_secret'], response['oauth_token'])
 
-        url = response['login_url'] + '&application_name=%s&oauth_consumer_key=%s' % (response['application_name'], self.consumer_key)
+        url = response['login_url'] + '&application_name=%s&oauth_consumer_key=%s' % (response['application_name'], self.client_key)
 
         if self.callback:
             url += '&oauth_callback=%s' % self.callback
@@ -80,15 +81,11 @@ class NetflixClient(object):
         return (secret_and_token, url)
 
     def get_access_token(self, secret, token):
-
-        self.client = requests.session(hooks={'pre_request': OAuthHook(token, secret)})
-
-        response = self.get_resource('/oauth/access_token', params={
-            'oauth_token': token
-        }, default_params=False)
-
-        ## We don't get anything here because we, as normal, send the response twice
-        ## issue is that you can only send this once, and requests breaks down there.
+        response = self.get_resource(
+            '/oauth/access_token',
+            oauth=OAuth1(self.client_key, self.client_secret, token, secret, signature_type='auth_header')
+        )
+        return response
 
     def verify_credentials(self):
         pass
