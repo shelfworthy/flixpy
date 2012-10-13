@@ -12,13 +12,14 @@ from flixpy.catalog import NetflixCatalog
 log = logging.getLogger('flixpy.client')
 
 class NetflixClient(object):
-    def __init__(self, application_name, consumer_key, consumer_secret, token_key=None, token_secret=None):
+    def __init__(self, application_name, consumer_key, consumer_secret, token_key=None, token_secret=None, callback=None):
         self.application_name = application_name
         self.server = 'api-public.netflix.com'
         self.connection = httplib.HTTPConnection(self.server, '80')
+        self.callback = callback
 
         # Setting up the OAuth client
-        OAuthHook.consumer_key = consumer_key
+        OAuthHook.consumer_key = self.consumer_key = consumer_key
         OAuthHook.consumer_secret = consumer_secret
         if token_key and token_secret:
             OAuthHook.access_token = token_key
@@ -65,4 +66,31 @@ class NetflixClient(object):
 
     def delete_resource(self, url, params=None):
         return self._request('delete', url, params)
+
+    # Auth
+
+    def get_request_token_url(self):
+        response = self.get_resource('/oauth/request_token')
+        secret_and_token = (response['oauth_token_secret'], response['oauth_token'])
+
+        url = response['login_url'] + '&application_name=%s&oauth_consumer_key=%s' % (response['application_name'], self.consumer_key)
+
+        if self.callback:
+            url += '&oauth_callback=%s' % self.callback
+
+        return (secret_and_token, url)
+
+    def get_access_token(self, secret, token):
+
+        self.client = requests.session(hooks={'pre_request': OAuthHook(token, secret)})
+
+        response = self.get_resource('/oauth/access_token', params={
+            'oauth_token': token
+        }, default_params=False)
+
+        ## We don't get anything here because we, as normal, send the response twice
+        ## issue is that you can only send this once, and requests breaks down there.
+
+    def verify_credentials(self):
+        pass
 

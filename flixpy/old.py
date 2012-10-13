@@ -89,7 +89,7 @@ class NetflixClient:
         data = gzip.GzipFile(fileobj=StringIO.StringIO(response.read())).read()
         return data
 
-    def _postResource(self, url, token=None, parameters=None):
+    def _post_resource(self, url, token=None, parameters=None):
         if not re.match('http',url):
             url = "http://%s%s" % (HOST, url)
 
@@ -113,7 +113,7 @@ class NetflixClient:
         data = gzip.GzipFile(fileobj=StringIO.StringIO(response.read())).read()
         return data
 
-    def _deleteResource(self, url, token=None, parameters=None):
+    def _delete_resource(self, url, token=None, parameters=None):
         if not re.match('http',url):
             url = "http://%s%s" % (HOST, url)
 
@@ -382,7 +382,7 @@ class NetflixUserQueue:
             response = json.loads(response)
             self.tag = response["queue"]["etag"]
         parameters['etag'] = self.tag
-        response = self.client._postResource(
+        response = self.client._post_resource(
                                     requestUrl,
                                     token=accessToken,
                                     parameters=parameters)
@@ -420,7 +420,7 @@ class NetflixUserQueue:
                                     token=accessToken,
                                     parameters=parameters)
 
-        response = self.client._deleteResource(entryID, token=accessToken)
+        response = self.client._delete_resource(entryID, token=accessToken)
         return response
 
 class NetflixPerson(NetflixBase):
