@@ -13,12 +13,18 @@ class NetflixUser(NetflixBase):
 
         raw_json = client.get_resource(self.user_id)
 
-        raw_json['user']['id'] = self.user_id
-
         super(NetflixUser, self).__init__(raw_json['user'], client)
 
     def __repr__(self):
         return self.full_name
+
+    @property
+    def id(self):
+        return self.data['user_id']
+
+    @property
+    def url(self):
+        return '/users/' + self.id
 
     @property
     def full_name(self):

@@ -66,6 +66,14 @@ class NetflixTitle(NetflixBase):
     def cast(self):
         return [NetflixPerson(person, self.client) for person in self.get_info('cast')]
 
+    #####################
+    #  Queue Functions  #
+    #####################
+
+    def add_to_queue(self, position=None):
+        self.client.post_resource(self.user.url + 'queue/')
+
+
 '''
 
     @property
