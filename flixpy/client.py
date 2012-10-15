@@ -59,7 +59,12 @@ class NetflixClient(object):
 
         return response.json
 
-    def get_resource(self, url, params=None, **kwargs):
+    def get_resource(self, url, params=None, expand=None, **kwargs):
+        if expand:
+            if not params:
+                params = {}
+            params['expand'] = expand
+
         return self._request('get', url, params, **kwargs)
 
     def post_resource(self, url, params=None, **kwargs):

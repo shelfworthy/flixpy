@@ -19,10 +19,8 @@ class NetflixCatalog(object):
             parameters['start_index'] = startIndex
         if maxResults:
             parameters['max_results'] = maxResults
-        if expand:
-            parameters['expand'] = expand
 
-        return self.client.get_resource(url, parameters)
+        return self.client.get_resource(url, parameters, expand=expand)
 
     def autocomplete(self, term, startIndex=None, maxResults=None):
         results = self._search('/catalog/titles/autocomplete', term, startIndex, maxResults)

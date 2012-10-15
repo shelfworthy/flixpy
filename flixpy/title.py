@@ -6,19 +6,18 @@ class NetflixTitle(NetflixBase):
     def __repr__(self):
         return self.title
 
+    def url(self):
+        return self.data['id']
+
     @property
     def id(self):
-        return self.data['id']
+        return int(self.data['id'].split('/')[-1])
 
     @property
     def title(self):
         if isinstance(self.data['title'], dict):
             return self.data['title']['regular']
         return self.data['title']
-
-    @property
-    def int_id(self):
-        return int(self.data['id'].split('/')[-1])
 
     @property
     def synopsis(self):

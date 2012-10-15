@@ -27,13 +27,13 @@ class NetflixBase(object):
             person
             user
         '''
-        raw = self.id.split('/')[-2]
+        raw = self.url.split('/')[-2]
 
         if raw == 'people':
             return 'person'
         elif raw != 'series':
             # remove the 's' from the end of everything but series
-            return self.id.split('/')[-2][0:-1]
+            return self.url.split('/')[-2][0:-1]
         else:
             return raw
 
@@ -64,7 +64,7 @@ class NetflixBase(object):
         else:
             # first we should make sure we have the complete resource (and not just a search result)
             if not self.meta:
-                full_data = self.client.get_resource(self.id)
+                full_data = self.client.get_resource(self.url)
                 self.meta = full_data['meta']
                 self.data = full_data[self._resource]
 
