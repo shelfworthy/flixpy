@@ -6,6 +6,7 @@ class NetflixTitle(NetflixBase):
     def __repr__(self):
         return self.title
 
+    @property
     def url(self):
         return self.data['id']
 
