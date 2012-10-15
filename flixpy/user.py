@@ -15,4 +15,6 @@ class NetflixUser(NetflixBase):
         super(NetflixUser, self).__init__(raw_json['user'], client)
 
     def __repr__(self):
-        return self.id
+        return self.first_name + " %s" % self.last_name
+
+
