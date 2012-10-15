@@ -77,16 +77,17 @@ class NetflixTitle(NetflixBase):
             for item in self.client.instant_queue['queue']:
                 if str(self.id) in item['id']:
                     try:
-                        print self.client.delete_resource(item['id'], params={'etag': self.client.instant_queue['meta']['etag']})
+                        self.client.instant_queue = self.client.delete_resource(item['id'], params={'etag': self.client.instant_queue['meta']['etag']})
+                        return 'Success'
                     except HTTPError:
                         # the queue is probably outdated, update and try again
                         if not second_try:
                             self.client.instant_queue = self.client.user.instant_queue(raw=True)
-                            print self.remove_from_queue(second_try=True)
+                            self.client.instant_queue = self.remove_from_queue(second_try=True)
         else:
             self.client.instant_queue = self.client.user.instant_queue(raw=True)
-            print self.client.instant_queue
             self.remove_from_queue()
+        return 'Failed'
 
 '''
 
