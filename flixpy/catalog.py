@@ -8,12 +8,13 @@ class NetflixCatalog(object):
         # NOTE this downloads *all* the streaming titles on netflix. This may take a while ;)
         return self.client.get_resource('/catalog/titles/streaming', index=True)
 
-    def _search(self, url, term, startIndex=None, maxResults=None, expand=None):
+    def _search(self, url, term, startIndex=None, maxResults=None, expand=None, show_disks=False):
         parameters = {
             'term': term,
-            'filters': '%s/categories/title_formats/instant' % self.client.server
         }
 
+        if not show_disks:
+            parameters['filters'] = '%s/categories/title_formats/instant' % self.client.server
         if startIndex:
             parameters['start_index'] = startIndex
         if maxResults:
