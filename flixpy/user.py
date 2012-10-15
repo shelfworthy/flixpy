@@ -17,7 +17,12 @@ class NetflixUser(NetflixBase):
         super(NetflixUser, self).__init__(raw_json['user'], client)
 
     def __repr__(self):
+        return self.full_name
+
+    @property
+    def full_name(self):
         return self.first_name + " %s" % self.last_name
+
 
     @property
     def url(self):
