@@ -33,18 +33,26 @@ class NetflixUser(NetflixBase):
     def recommendations(self):
         return [NetflixTitle(title, self.client) for title in self.get_info('recommendations')]
 
-    def instant_queue(self):
+    def instant_queue(self, raw=False):
         '''
         This is a quick link to the users instant queue. You can also get This
         by calling the `queue_list` resource, then calling the queue
         but thats an extra request.
 
-        This function also expands the results with @title as the normal queue only sends id's
+        the resource can be retrieved with raw to get data used for deleting items
         '''
 
-        item_list = self.client.get_resource('%s/queues/instant' % self.url, expand="@title", params={
+        if raw:
+            expand = None
+        else:
+            expand = "@title"
+
+        item_list = self.client.get_resource('%s/queues/instant' % self.url, expand=expand, params={
             'max_results': 500
         })
+
+        if raw:
+            return item_list
 
         return [NetflixTitle(title['item'], self.client) for title in item_list['queue']]
 

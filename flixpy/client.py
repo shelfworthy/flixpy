@@ -39,6 +39,9 @@ class NetflixClient(object):
         # Attach the netflix catalog functions
         self.catalog = NetflixCatalog(self)
 
+        # setup a placeholder for the users instant queue
+        self.instant_queue = None
+
     def _request(self, method, url, params=None, default_params=True):
         if not re.match('http', url):
             url = "http://%s%s" % (self.server, url)

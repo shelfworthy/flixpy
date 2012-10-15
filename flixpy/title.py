@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+from requests.exceptions import HTTPError
+
 from .base import NetflixBase
 from .person import NetflixPerson
 
@@ -70,9 +72,21 @@ class NetflixTitle(NetflixBase):
     #  Queue Functions  #
     #####################
 
-    def add_to_queue(self, position=None):
-        self.client.post_resource(self.user.url + 'queue/')
-
+    def remove_from_queue(self, second_try=False):
+        if self.client.instant_queue:
+            for item in self.client.instant_queue['queue']:
+                if str(self.id) in item['id']:
+                    try:
+                        print self.client.delete_resource(item['id'], params={'etag': self.client.instant_queue['meta']['etag']})
+                    except HTTPError:
+                        # the queue is probably outdated, update and try again
+                        if not second_try:
+                            self.client.instant_queue = self.client.user.instant_queue(raw=True)
+                            print self.remove_from_queue(second_try=True)
+        else:
+            self.client.instant_queue = self.client.user.instant_queue(raw=True)
+            print self.client.instant_queue
+            self.remove_from_queue()
 
 '''
 
