@@ -1,5 +1,4 @@
-from flixpy.base import NetflixBase
-
+from .base import NetflixBase
 from .title import NetflixTitle
 
 class NetflixUser(NetflixBase):
@@ -15,7 +14,6 @@ class NetflixUser(NetflixBase):
         raw_json = client.get_resource(self.user_id)
 
         raw_json['user']['id'] = self.user_id
-        print raw_json['user']
 
         super(NetflixUser, self).__init__(raw_json['user'], client)
 

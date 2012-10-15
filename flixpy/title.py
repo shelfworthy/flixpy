@@ -1,6 +1,7 @@
 from datetime import timedelta
 
-from flixpy.base import NetflixBase
+from .base import NetflixBase
+from .person import NetflixPerson
 
 class NetflixTitle(NetflixBase):
     def __repr__(self):
@@ -58,6 +59,12 @@ class NetflixTitle(NetflixBase):
             return 'https://movies.netflix.com/WiPlayer?movieid=%s' % self.int_id
         else:
             return None
+
+    def directors(self):
+        return [NetflixPerson(person, self.client) for person in self.get_info('directors')]
+
+    def cast(self):
+        return [NetflixPerson(person, self.client) for person in self.get_info('cast')]
 
 '''
 

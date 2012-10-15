@@ -5,8 +5,8 @@ import logging
 import requests
 from requests.auth import OAuth1
 
-from flixpy.catalog import NetflixCatalog
-from flixpy.user import NetflixUser
+from .catalog import NetflixCatalog
+from .user import NetflixUser
 
 log = logging.getLogger('flixpy.client')
 
