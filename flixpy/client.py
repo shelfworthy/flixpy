@@ -1,8 +1,6 @@
 import re
-import gzip
 import httplib
 import logging
-import StringIO
 
 import requests
 from requests.auth import OAuth1
@@ -19,22 +17,24 @@ class NetflixClient(object):
         self.connection = httplib.HTTPConnection(self.server, '80')
 
         # Setting up the OAuth client
+        # This gets a little more complex than I would like because requests requries unicode.
         self.client_key = unicode(client_key)
         self.client_secret = unicode(client_secret)
-
+        self.resource_owner_key = None
+        self.resource_owner_secret = None
+        if resource_owner_key:
+            self.resource_owner_key = unicode(resource_owner_key)
+        if resource_owner_secret:
+            self.resource_owner_secret = unicode(resource_owner_secret)
+        self.callback = None
         if callback:
             self.callback = unicode(callback)
-        else:
-            self.callback = None
-
-        if resource_owner_key and resource_owner_secret:
-            self.resource_owner_key = unicode(resource_owner_key)
-            self.resource_owner_secret = unicode(resource_owner_secret)
-            self.user = NetflixUser(self, user_id)
-        else:
-            self.resource_owner_key = self.resource_owner_secret = None
 
         self.oauth = OAuth1(self.client_key, self.client_secret, self.resource_owner_key, self.resource_owner_secret, signature_type='query')
+
+        if resource_owner_key and resource_owner_secret:
+            # if we have access to a user, attach the user object
+            self.user = NetflixUser(self, user_id)
 
         # Attach the netflix catalog functions
         self.catalog = NetflixCatalog(self)
@@ -91,7 +91,4 @@ class NetflixClient(object):
         self.user = NetflixUser(self)
 
         return response
-
-    def verify_credentials(self):
-        pass
 
