@@ -17,6 +17,14 @@ class NetflixBase(object):
         return self.get_info(name)
 
     @property
+    def id(self):
+        return int(self.data['id'].split('/')[-1])
+
+    @property
+    def url(self):
+        return self.data['id']
+
+    @property
     def type(self):
         '''
         get the item type:

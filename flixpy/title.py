@@ -7,14 +7,6 @@ class NetflixTitle(NetflixBase):
         return self.title
 
     @property
-    def url(self):
-        return self.data['id']
-
-    @property
-    def id(self):
-        return int(self.data['id'].split('/')[-1])
-
-    @property
     def title(self):
         if isinstance(self.data['title'], dict):
             return self.data['title']['regular']
