@@ -10,7 +10,8 @@ class NetflixCatalog(object):
 
     def _search(self, url, term, startIndex=None, maxResults=None, expand=None):
         parameters = {
-            'term': term
+            'term': term,
+            'filters': '%s/categories/title_formats/instant' % self.client.server
         }
 
         if startIndex:
