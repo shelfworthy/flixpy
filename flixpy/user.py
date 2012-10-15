@@ -36,7 +36,9 @@ class NetflixUser(NetflixBase):
         This function also expands the results with @title as the normal queue only sends id's
         '''
 
-        item_list = self.client.get_resource('%s/queues/instant' % self.url, expand="@title")
+        item_list = self.client.get_resource('%s/queues/instant' % self.url, expand="@title", params={
+            'max_results': 500
+        })
 
         return [NetflixTitle(title['item'], self.client) for title in item_list['queue']]
 
