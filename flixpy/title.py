@@ -78,7 +78,7 @@ class NetflixTitle(NetflixBase):
                 if str(self.id) in item['id']:
                     try:
                         self.client.instant_queue = self.client.delete_resource(item['id'], params={'etag': self.client.instant_queue['meta']['etag']})
-                        return 'Success'
+                        return True
                     except HTTPError:
                         # the queue is probably outdated, update and try again
                         if not second_try:
@@ -87,7 +87,30 @@ class NetflixTitle(NetflixBase):
         else:
             self.client.instant_queue = self.client.user.instant_queue(raw=True)
             self.remove_from_queue()
-        return 'Failed'
+        return False
+
+    def add_to_queue(self, position=None, second_try=False):
+        if self.client.instant_queue:
+            try:
+                if not position:
+                    # if we don't have a position, put this item at the end
+                    position = int(self.client.instant_queue['meta']['queue_length']) + 1
+                self.client.post_resource('/users/%s/queues/instant' % self.client.user.id, data={
+                    'etag': self.client.instant_queue['meta']['etag'],
+                    'title_ref': self.url,
+                    'position': unicode(position)
+                })
+
+                return True
+            except HTTPError:
+                if not second_try:
+                    self.client.instant_queue = self.client.user.instant_queue(raw=True)
+                    self.add_to_queue(position, second_try=True)
+        else:
+            self.client.instant_queue = self.client.user.instant_queue(raw=True)
+            self.add_to_queue(position)
+
+        return False
 
 '''
 

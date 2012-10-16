@@ -42,7 +42,7 @@ class NetflixClient(object):
         # setup a placeholder for the users instant queue
         self.instant_queue = None
 
-    def _request(self, method, url, params=None, default_params=True):
+    def _request(self, method, url, params=None, data=None, default_params=True):
         if not re.match('http', url):
             url = "http://%s%s" % (self.server, url)
 
@@ -55,8 +55,8 @@ class NetflixClient(object):
         if params:
             request_params = dict(request_params.items() + params.items())
 
-        response = requests.request(method, url, params=request_params, allow_redirects=True, auth=self.oauth, headers={'Accept-encoding': 'gzip'})
-
+        response = requests.request(method, url, params=request_params, data=data, allow_redirects=True, auth=self.oauth, headers={'Accept-encoding': 'gzip'})
+        print response.content
         # raise an error if we get it
         response.raise_for_status()
 
@@ -70,8 +70,8 @@ class NetflixClient(object):
 
         return self._request('get', url, params, **kwargs)
 
-    def post_resource(self, url, params=None, **kwargs):
-        return self._request('post', url, params, **kwargs)
+    def post_resource(self, url, params=None, data=None, **kwargs):
+        return self._request('post', url, params, data, **kwargs)
 
     def delete_resource(self, url, params=None, **kwargs):
         return self._request('delete', url, params, **kwargs)
