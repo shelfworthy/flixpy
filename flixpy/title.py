@@ -23,7 +23,7 @@ class NetflixTitle(NetflixBase):
     # the following all assumes we're talking about streaming
 
     @property
-    def available(self):
+    def is_available(self):
         raw = self.get_info('format_availability')
         return 'instant' in raw['delivery_formats']
 
