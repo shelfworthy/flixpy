@@ -101,6 +101,8 @@ class NetflixTitle(NetflixBase):
                     'position': unicode(position)
                 })
 
+                self.client.instant_queue = self.client.user.instant_queue(raw=True)
+
                 return True
             except HTTPError:
                 if not second_try:
