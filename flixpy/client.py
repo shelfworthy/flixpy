@@ -56,7 +56,6 @@ class NetflixClient(object):
             request_params = dict(request_params.items() + params.items())
 
         response = requests.request(method, url, params=request_params, data=data, allow_redirects=True, auth=self.oauth, headers={'Accept-encoding': 'gzip'})
-        print response.content
         # raise an error if we get it
         response.raise_for_status()
 
