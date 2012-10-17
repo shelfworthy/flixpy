@@ -25,10 +25,14 @@ class NetflixTitle(NetflixBase):
     @property
     def is_available(self):
         raw = self.get_info('format_availability')
-        return 'instant' in raw['delivery_formats']
+
+        if raw:
+            return 'instant' in raw['delivery_formats']
+        else:
+            return False
 
     def _stream_info(self, key):
-        if self.available:
+        if self.is_available:
             instant = self.get_info('format_availability')['delivery_formats']['instant']
             if key in instant:
                 return instant[key]
@@ -57,7 +61,7 @@ class NetflixTitle(NetflixBase):
 
     @property
     def watch_link(self):
-        if self.available:
+        if self.is_available:
             return 'https://movies.netflix.com/WiPlayer?movieid=%s' % self.id
         else:
             return None

@@ -79,7 +79,14 @@ class NetflixBase(object):
             # see if what the user is looking for is still on the server
             if 'links' in self.meta and key in self.meta['links']:
                 try:
-                    self.data[key] = self.client.get_resource(self.meta['links'][key])[result_key or key]
+                    resource = self.client.get_resource(self.meta['links'][key])
+
+                    if not resource:
+                        # if the link does not return data (as format_availability seems to do from time to time)
+                        # set the data for this key to None
+                        self.data[key] = None
+                    else:
+                        self.data[key] = self.client.get_resource(self.meta['links'][key])[result_key or key]
                 except KeyError:
                     try:
                         self.data[key] = self.client.get_resource(self.meta['links'][key])
