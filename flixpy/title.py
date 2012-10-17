@@ -6,9 +6,6 @@ from .base import NetflixBase
 from .person import NetflixPerson
 
 class NetflixTitle(NetflixBase):
-    def __repr__(self):
-        return self.title
-
     @property
     def title(self):
         if isinstance(self.data['title'], dict):

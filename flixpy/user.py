@@ -31,7 +31,8 @@ class NetflixUser(NetflixBase):
         return self.first_name + " %s" % self.last_name
 
     def recommendations(self):
-        return [NetflixTitle(title, self.client) for title in self.get_info('recommendations')]
+        # right now we always get 200 recommendations, which as far as I can tell right now is the max
+        return [NetflixTitle(title, self.client) for title in self.get_info('recommendations', params={'max_results': 200})]
 
     def instant_queue(self, raw=False):
         '''

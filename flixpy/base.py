@@ -55,7 +55,7 @@ class NetflixBase(object):
             return 'catalog_title'
         return self.type
 
-    def get_info(self, key, result_key=None):
+    def get_info(self, key, result_key=None, params=None):
         '''
         This function will get the given key from the resource.
         If the data has already been downloaded, its returned.
@@ -78,19 +78,15 @@ class NetflixBase(object):
 
             # see if what the user is looking for is still on the server
             if 'links' in self.meta and key in self.meta['links']:
-                try:
-                    resource = self.client.get_resource(self.meta['links'][key])
+                resource = self.client.get_resource(self.meta['links'][key], params=params)
 
-                    if not resource:
-                        # if the link does not return data (as format_availability seems to do from time to time)
-                        # set the data for this key to None
-                        self.data[key] = None
-                    else:
-                        self.data[key] = self.client.get_resource(self.meta['links'][key])[result_key or key]
-                except KeyError:
+                if resource:
                     try:
-                        self.data[key] = self.client.get_resource(self.meta['links'][key])
+                        self.data[key] = resource[result_key or key]
                     except KeyError:
-                        return None
+                        try:
+                            self.data[key] = self.client.get_resource(self.meta['links'][key])
+                        except KeyError:
+                            self.data[key] = None
 
         return self.data[key]

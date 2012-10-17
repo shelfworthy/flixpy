@@ -52,12 +52,12 @@ Or do an actual search:
 
 results = netflix.catalog.search('invader zim')
 
-print results
+print [i.title for i in results]
 
-[Invader Zim,
- Invader,
- The Invader,
- Invisible Invaders,
+[u'Invader Zim',
+ u'Invader',
+ u'The Invader',
+ u'Invisible Invaders',
  ...
 ```
 
