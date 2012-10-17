@@ -87,6 +87,7 @@ class NetflixBase(object):
                         try:
                             self.data[key] = self.client.get_resource(self.meta['links'][key])
                         except KeyError:
-                            self.data[key] = None
-
-        return self.data[key]
+                            pass
+        if key in self.data:
+            return self.data[key]
+        return None
