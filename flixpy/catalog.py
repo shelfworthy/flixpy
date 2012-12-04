@@ -4,9 +4,9 @@ class NetflixCatalog(object):
     def __init__(self, client):
         self.client = client
 
-    def streaming(self):
+    def streaming(self, *args, **kwargs):
         # NOTE this downloads *all* the streaming titles on netflix. This may take a while ;)
-        return self.client.get_resource('/catalog/titles/streaming', index=True)
+        return self.client.get_resource('/catalog/titles/streaming', *args, **kwargs)
 
     def _search(self, url, term, startIndex=None, maxResults=None, expand=None, show_disks=False):
         parameters = {
