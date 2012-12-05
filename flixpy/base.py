@@ -18,7 +18,7 @@ class NetflixBase(object):
 
     @property
     def id(self):
-        return int(self.data['id'].split('/')[-1])
+        return int(self.data['id'].split('.com')[1])
 
     @property
     def url(self):
