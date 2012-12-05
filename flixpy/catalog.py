@@ -36,3 +36,11 @@ class NetflixCatalog(object):
             return [NetflixTitle(title, self.client) for title in results['catalog']]
         except KeyError:
             return []
+
+    def get_title_by_id(self, netflix_id):
+        ''' get a title object using the titles netflix id (partial url):
+            /catalog/titles/movies/60021896
+        '''
+        raw_title = self.client.get_resource(netflix_id)['catalog_title']
+
+        return NetflixTitle(raw_title, self.client)
