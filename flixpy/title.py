@@ -59,7 +59,7 @@ class NetflixTitle(NetflixBase):
     @property
     def watch_link(self):
         if self.is_available:
-            return 'https://movies.netflix.com/WiPlayer?movieid=%s' % self.id
+            return 'https://movies.netflix.com/WiPlayer?movieid=%s' % self.id.split('/')[-1]
         else:
             return None
 
