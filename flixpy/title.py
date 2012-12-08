@@ -24,8 +24,9 @@ class NetflixTitle(NetflixBase):
         raw = self.get_info('format_availability')
 
         if raw:
-            return 'instant' in raw['delivery_formats']
-        else:
+            if 'delivery_formats' in raw:
+                return 'instant' in raw['delivery_formats']
+
             return False
 
     def _stream_info(self, key):
