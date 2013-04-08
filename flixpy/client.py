@@ -3,7 +3,7 @@ import httplib
 import logging
 
 import requests
-from requests.auth import OAuth1
+from requests_oauthlib import OAuth1
 
 from .catalog import NetflixCatalog
 from .user import NetflixUser
