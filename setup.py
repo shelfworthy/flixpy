@@ -22,6 +22,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'requests==1.2.0',
+        'requests-oauthlib==0.3.0',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
