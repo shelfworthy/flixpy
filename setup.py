@@ -21,7 +21,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'requests==0.14.1',
+        'requests==1.2.0',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
