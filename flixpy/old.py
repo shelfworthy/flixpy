@@ -172,14 +172,14 @@ class NetflixUser(NetflixBase):
     def __init__(self):
         requestUrl = '/users/current'
 
-            raw_json = json.loads(
-                client._get_resource(
-                    requestUrl,
-                    token=self.accessToken
-                )
+        raw_json = json.loads(
+            client._get_resource(
+                requestUrl,
+                token=self.accessToken
             )
+        )
 
-            super(NetflixUser, self).__init__(raw_json['user'], client)
+        super(NetflixUser, self).__init__(raw_json['user'], client)
 
     @property
     def name(self):
