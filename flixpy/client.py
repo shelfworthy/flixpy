@@ -59,7 +59,7 @@ class NetflixClient(object):
         # raise an error if we get it
         response.raise_for_status()
 
-        return response.json
+        return response.json()
 
     def get_resource(self, url, params=None, expand=None, **kwargs):
         if expand:
