@@ -20,7 +20,7 @@ First you'll need to get a `key` and `secret` from netflix. you can do that by r
 Once you have those (and have registered an app with them) you can get started. At the most basic level you can access general netflix resources using just the data provided above:
 
 ``` python
-    from netflix import NetflixClient
+    from flixpy import NetflixClient
 
     APP_NAME   = '<your app name>'
     API_KEY    = '<your key>'
