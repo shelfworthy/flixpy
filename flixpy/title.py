@@ -21,17 +21,16 @@ class NetflixTitle(NetflixBase):
 
     @property
     def is_available(self):
-        raw = self.get_info('format_availability')
+        raw = self.get_info('delivery_formats', 'format_availability')
 
         if raw:
-            if 'delivery_formats' in raw:
-                return 'instant' in raw['delivery_formats']
+            return 'instant' in raw
 
-            return False
+        return False
 
     def _stream_info(self, key):
         if self.is_available:
-            instant = self.get_info('format_availability')['delivery_formats']['instant']
+            instant = self.data['delivery_formats']['instant']
             if key in instant:
                 return instant[key]
         return None
