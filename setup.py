@@ -21,7 +21,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'requests==1.2.0',
+        'requests==2.20.0',
         'requests-oauthlib==0.3.0',
     ],
     classifiers=[
